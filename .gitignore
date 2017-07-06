@@ -1,0 +1,4 @@
+target
+Cargo.lock
+/tests/*.mid
+.tags1

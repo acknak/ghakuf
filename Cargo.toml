@@ -1,0 +1,11 @@
+[package]
+name = "ghakuf"
+version = "0.1.0"
+authors = ["acknak <acknak39@gmail.com>"]
+
+[dependencies]
+byteorder = "1.0.0"
+
+[lib]
+name = "ghakuf"
+path = "src/lib.rs"
