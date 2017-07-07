@@ -1,4 +1,5 @@
 extern crate byteorder;
+extern crate log;
 
 pub mod formats;
 pub mod messages;
