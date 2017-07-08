@@ -46,6 +46,7 @@ impl Reader {
             }
             Ok(buf_size > 0)
         } else {
+            error!("invalid tag found: {:?}", &tag);
             Err(ReadError::SmfFormat(self.path.clone()))
         }
     }
@@ -59,6 +60,7 @@ impl Reader {
             }
             Ok(self)
         } else {
+            error!("invalid smf identify code found at header");
             Err(ReadError::SmfFormat(self.path.clone()))
         }
     }
@@ -70,6 +72,11 @@ impl Reader {
             data_size -= delta_time.len() as u32;
             let mut status = self.file.read_u8()?;
             if status < 0b10000000 {
+                info!(
+                    "running status found! found data: {}, correct data: {}",
+                    status,
+                    pre_status
+                );
                 status = pre_status;
                 self.file.seek(SeekFrom::Current(-1))?;
             } else {
@@ -78,6 +85,7 @@ impl Reader {
             match status {
                 0xff => {
                     // meta event
+                    info!("meta event status found!");
                     let meta_event = MetaEvent::new(self.file.read_u8()?);
                     data_size -= size_of::<u8>() as u32;
                     let len = self.read_vlq()?;
@@ -89,6 +97,7 @@ impl Reader {
                 }
                 0x80...0xef => {
                     // midi event
+                    info!("midi event status found!");
                     let mut builder = MidiEventBuilder::new(status);
                     while builder.shortage() > 0 {
                         builder.push(self.file.read_u8()?);
@@ -102,6 +111,7 @@ impl Reader {
                 }
                 0xf0 | 0xf7 => {
                     // system exclusive event
+                    info!("system exclusice event status found!");
                     if status == 0xf7 && pre_status == 0xf0 {
                         pre_status = 0;
                         data_size -= size_of::<u8>() as u32;
@@ -118,7 +128,10 @@ impl Reader {
                         pre_status = 0xf0;
                     }
                 }
-                _ => return Err(ReadError::SmfFormat(self.path.clone())),
+                _ => {
+                    error!("unknown status found: {}", status);
+                    return Err(ReadError::SmfFormat(self.path.clone()));
+                }
             };
         }
         Ok(self)

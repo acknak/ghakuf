@@ -43,6 +43,7 @@ impl Writer {
         self
     }
     pub fn write(&self, path: PathBuf) -> Result<(), WriteError> {
+        info!("start writing at {:?}", &path);
         let mut file = BufWriter::new(OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -69,6 +70,7 @@ impl Writer {
                         track_len_filo.pop().unwrap() as u32,
                     )?;
                     pre_status_byte = None;
+                    info!("wrote track change");
                 }
                 Message::MidiEvent {
                     delta_time,
@@ -81,9 +83,11 @@ impl Writer {
                             let tmp_message = message.binary();
                             file.write(&tmp_message[0..delta_time.len()])?;
                             file.write(&message.binary()[delta_time.len() + 1..])?;
+                            info!("wrote some message with running status");
                         }
                         _ => {
                             file.write(&message.binary())?;
+                            info!("wrote some message");
                             if self.running_status {
                                 pre_status_byte = Some(tmp_status_byte);
                             }
@@ -92,6 +96,7 @@ impl Writer {
                 }
                 _ => {
                     file.write(&message.binary())?;
+                    info!("wrote some message");
                 }
             }
         }
