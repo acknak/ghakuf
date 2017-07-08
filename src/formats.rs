@@ -1,7 +1,9 @@
 use std::fmt;
 
-/// An enum representing SMF format(0-2)
+/// An enum representing SMF format(0-2).
+///
 /// # Examples
+///
 /// ```
 /// use ghakuf::formats::Format;
 ///
@@ -20,8 +22,10 @@ pub enum Format {
     Unknown,
 }
 impl Format {
-    /// build Format from u16 value
+    /// Builds Format from u16 value.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ghakuf::formats::Format;
     ///
@@ -37,8 +41,10 @@ impl Format {
             _ => Unknown,
         }
     }
-    /// make binary array for SMF
+    /// Makes binary array for SMF.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ghakuf::formats::Format;
     ///
@@ -69,8 +75,10 @@ impl fmt::Display for Format {
     }
 }
 
-/// An enum representing SMF Tag "MThd" and "MTrk"
+/// An enum representing SMF Tag "MThd" and "MTrk".
+///
 /// # Examples
+///
 /// ```
 /// use ghakuf::formats::Tag;
 ///
@@ -85,8 +93,10 @@ pub enum Tag {
     Track,
 }
 impl Tag {
-    /// make binary array for SMF
+    /// Makes binary array for SMF.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ghakuf::formats::Tag;
     ///
@@ -100,10 +110,12 @@ impl Tag {
     }
 }
 
-/// A struct representing SMF Variable Length Quantity
+/// A struct representing SMF Variable Length Quantity.
 ///
 /// You can make VLQ from u32 value.
+///
 /// # Examples
+///
 /// ```
 /// use ghakuf::formats::VLQ;
 ///
@@ -126,14 +138,17 @@ impl Tag {
 /// assert_eq!(vlq.binary(), [0x86, 0xc3, 0x17]);
 /// assert_eq!(vlq.len(), 3);
 /// ```
+///
 /// Note: Due to SMF restriction, this struct can only represent value under 2^28.
 #[derive(PartialEq, Clone, Copy)]
 pub struct VLQ {
     val: u32,
 }
 impl VLQ {
-    /// build VLQ from u32 value
+    /// Builds VLQ from u32 value.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ghakuf::formats::VLQ;
     ///
@@ -142,8 +157,10 @@ impl VLQ {
     pub fn new(val: u32) -> VLQ {
         VLQ { val: val }
     }
-    /// make binary array for SMF
+    /// Makes binary array for SMF.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ghakuf::formats::VLQ;
     ///
@@ -166,8 +183,10 @@ impl VLQ {
         }
         binary
     }
-    /// return length of binary array for SMF
+    /// Returns length of binary array for SMF.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ghakuf::formats::VLQ;
     ///
@@ -185,8 +204,10 @@ impl VLQ {
         }
         len
     }
-    /// return value from VLQ
+    /// Returns value from VLQ.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ghakuf::formats::VLQ;
     ///
@@ -259,9 +280,10 @@ mod vlq_tests {
     }
 }
 
-/// VLQ Builder from u8 values
+/// VLQ Builder from u8 values.
 ///
 /// # Examples
+///
 /// ```
 /// use ghakuf::formats::{VLQ, VLQBuilder};
 ///
@@ -275,8 +297,10 @@ pub struct VLQBuilder {
     closed: bool,
 }
 impl VLQBuilder {
-    /// build VLQBuilder
+    /// Builds VLQBuilder.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ghakuf::formats::VLQBuilder;
     ///
@@ -288,15 +312,18 @@ impl VLQBuilder {
             closed: false,
         }
     }
-    /// push u8 value for VLQ to VLQBuilder
+    /// Pushes u8 value for VLQ to VLQBuilder.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ghakuf::formats::VLQBuilder;
     ///
     /// let mut vlq_builder = VLQBuilder::new();
     /// vlq_builder.push(0x86).push(0xc3).push(0x17);
     /// ```
-    /// Note: VLQBuilder can accept only 4 u8 value due to SMF restriction. This method ignore after the fifth;
+    ///
+    /// Note: VLQBuilder can accept only 4 u8 value due to SMF restriction. This method ignore after the fifth.
     pub fn push(&mut self, data: u8) -> &mut VLQBuilder {
         if !self.closed {
             self.val = self.val << 7 | ((data & 0b0111_1111) as u32);
@@ -306,8 +333,10 @@ impl VLQBuilder {
         }
         self
     }
-    /// check whether VLQBuilder is saturated or not
+    /// Checks whether VLQBuilder is saturated or not.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ghakuf::formats::VLQBuilder;
     ///
@@ -322,6 +351,15 @@ impl VLQBuilder {
     pub fn closed(&self) -> bool {
         self.closed
     }
+    /// Builds VLQ from VLQBuilder.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::formats::{VLQ, VLQBuilder};
+    ///
+    /// let vlq: VLQ = VLQBuilder::new().push(0x12).build();
+    /// ```
     pub fn build(&self) -> VLQ {
         VLQ { val: self.val }
     }
