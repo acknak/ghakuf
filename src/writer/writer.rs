@@ -1,10 +1,10 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use formats::*;
 use messages::*;
-use std::path::PathBuf;
 use std::fs::OpenOptions;
+use std::io;
 use std::io::{BufWriter, Write};
-use writer::write_error::WriteError;
+use std::path::PathBuf;
 
 pub struct Writer {
     messages: Vec<Message>,
@@ -42,7 +42,7 @@ impl Writer {
         self.running_status = running_status;
         self
     }
-    pub fn write(&self, path: PathBuf) -> Result<(), WriteError> {
+    pub fn write(&self, path: PathBuf) -> Result<(), io::Error> {
         info!("start writing at {:?}", &path);
         let mut file = BufWriter::new(OpenOptions::new()
             .write(true)

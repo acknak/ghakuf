@@ -46,12 +46,27 @@ impl Reader {
             }
             Ok(buf_size > 0)
         } else {
-            error!("invalid tag found: {:?}", &tag);
-            Err(ReadError::SmfFormat(self.path.clone()))
+            error!("invalid tag has found: {:?}", &tag);
+            match tag_type {
+                Tag::Header => {
+                    return Err(ReadError::InvalidHeaderTag {
+                        tag: tag,
+                        path: self.path.clone(),
+                    })
+                }
+                Tag::Track => {
+                    return Err(ReadError::InvalidTrackTag {
+                        tag: tag,
+                        path: self.path.clone(),
+                    })
+                }
+            }
+
         }
     }
     fn read_header_block(&mut self) -> Result<&mut Reader, ReadError> {
-        if self.file.read_u32::<BigEndian>()? == 6u32 {
+        let file_code = self.file.read_u32::<BigEndian>()?;
+        if file_code == 6u32 {
             let format = Format::new(self.file.read_u16::<BigEndian>()?);
             let track = self.file.read_u16::<BigEndian>()?;
             let timebase = self.file.read_u16::<BigEndian>()?;
@@ -60,8 +75,11 @@ impl Reader {
             }
             Ok(self)
         } else {
-            error!("invalid smf identify code found at header");
-            Err(ReadError::SmfFormat(self.path.clone()))
+            error!("invalid smf identify code has found at header");
+            Err(ReadError::InvalidIdentifyCode {
+                code: file_code,
+                path: self.path.clone(),
+            })
         }
     }
     fn read_track_block(&mut self) -> Result<&mut Reader, ReadError> {
@@ -73,7 +91,7 @@ impl Reader {
             let mut status = self.file.read_u8()?;
             if status < 0b10000000 {
                 info!(
-                    "running status found! found data: {}, correct data: {}",
+                    "running status has found! recorded data: {}, corrected data: {}",
                     status,
                     pre_status
                 );
@@ -85,7 +103,7 @@ impl Reader {
             match status {
                 0xff => {
                     // meta event
-                    info!("meta event status found!");
+                    info!("meta event status has found!");
                     let meta_event = MetaEvent::new(self.file.read_u8()?);
                     data_size -= size_of::<u8>() as u32;
                     let len = self.read_vlq()?;
@@ -97,7 +115,7 @@ impl Reader {
                 }
                 0x80...0xef => {
                     // midi event
-                    info!("midi event status found!");
+                    info!("midi event status has found!");
                     let mut builder = MidiEventBuilder::new(status);
                     while builder.shortage() > 0 {
                         builder.push(self.file.read_u8()?);
@@ -111,7 +129,7 @@ impl Reader {
                 }
                 0xf0 | 0xf7 => {
                     // system exclusive event
-                    info!("system exclusice event status found!");
+                    info!("system exclusice event status has found!");
                     if status == 0xf7 && pre_status == 0xf0 {
                         pre_status = 0;
                         data_size -= size_of::<u8>() as u32;
@@ -129,8 +147,11 @@ impl Reader {
                     }
                 }
                 _ => {
-                    error!("unknown status found: {}", status);
-                    return Err(ReadError::SmfFormat(self.path.clone()));
+                    error!("unknown status has found: {}", status);
+                    return Err(ReadError::UnknownMessageStatus {
+                        status: status,
+                        path: self.path.clone(),
+                    });
                 }
             };
         }
