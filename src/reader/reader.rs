@@ -47,11 +47,26 @@ impl Reader {
             Ok(buf_size > 0)
         } else {
             error!("invalid tag found: {:?}", &tag);
-            Err(ReadError::SmfFormat(self.path.clone()))
+            match tag_type {
+                Tag::Header => {
+                    return Err(ReadError::InvalidHeaderTag {
+                        tag: tag,
+                        path: self.path.clone(),
+                    })
+                }
+                Tag::Track => {
+                    return Err(ReadError::InvalidTrackTag {
+                        tag: tag,
+                        path: self.path.clone(),
+                    })
+                }
+            }
+
         }
     }
     fn read_header_block(&mut self) -> Result<&mut Reader, ReadError> {
-        if self.file.read_u32::<BigEndian>()? == 6u32 {
+        let file_code = self.file.read_u32::<BigEndian>()?;
+        if file_code == 6u32 {
             let format = Format::new(self.file.read_u16::<BigEndian>()?);
             let track = self.file.read_u16::<BigEndian>()?;
             let timebase = self.file.read_u16::<BigEndian>()?;
@@ -61,7 +76,10 @@ impl Reader {
             Ok(self)
         } else {
             error!("invalid smf identify code found at header");
-            Err(ReadError::SmfFormat(self.path.clone()))
+            Err(ReadError::InvalidIdentifyCode {
+                code: file_code,
+                path: self.path.clone(),
+            })
         }
     }
     fn read_track_block(&mut self) -> Result<&mut Reader, ReadError> {
@@ -130,7 +148,10 @@ impl Reader {
                 }
                 _ => {
                     error!("unknown status found: {}", status);
-                    return Err(ReadError::SmfFormat(self.path.clone()));
+                    return Err(ReadError::UnknownMessageStatus {
+                        status: status,
+                        path: self.path.clone(),
+                    });
                 }
             };
         }
