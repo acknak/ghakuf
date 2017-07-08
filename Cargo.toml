@@ -1,6 +1,6 @@
 [package]
 name = "ghakuf"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["acknak <acknak39@gmail.com>"]
 
 [dependencies]
