@@ -8,17 +8,17 @@
 //!
 //! `ghakuf`'s parser is made by Event-driven online algorithm. You must prepare original handler implementing Handler trait to catch SMF messages. Any number of handlers you can add for parser if you want.
 //!
-//! ```rust
+//! ```
 //! use ghakuf::formats::*;
 //! use ghakuf::messages::*;
 //! use ghakuf::reader::handler::*;
 //! use ghakuf::reader::reader::*;
 //! use std::path::PathBuf;
 //!
-//! let mut reader = Reader::new(
+//! let _ = Reader::new(
 //!     Box::new(HogeHandler {}),
-//!     PathBuf::from("test.mid"),
-//! ).unwrap();
+//!     PathBuf::from("tests/test.mid"),
+//! );
 //!
 //! struct HogeHandler {}
 //! impl Handler for HogeHandler {
@@ -44,7 +44,7 @@
 //!
 //! `ghakuf` build SMF by Message enums. Message enum consists of MetaEvent, MidiEvent, SysExEvent, and TrackChange. You can use running status if you want. At track change, you should use not only MetaEvent::EndOfTrack message, but also TrackChange message.
 //!
-//! ```rust
+//! ```
 //! use ghakuf::formats::*;
 //! use ghakuf::messages::*;
 //! use ghakuf::writer::writer::*;
@@ -77,7 +77,7 @@
 //!     event: MetaEvent::EndOfTrack,
 //!     data: Vec::new(),
 //! });
-//! writer.write(PathBuf::from("test.mid"));
+//! writer.write(PathBuf::from("tests/test.mid"));
 //! ```
 //!
 extern crate byteorder;
