@@ -62,10 +62,10 @@ impl error::Error for ReadError {
                 "Invalid header tag has found. This file dosen't follow SMF format."
             }
             InvalidIdentifyCode { .. } => {
-                [
+                concat!(
                     "Invalid SMF identify code has found at header.",
-                    "This file dosen't follow SMF format.",
-                ].connect(" ")
+                    "This file dosen't follow SMF format."
+                )
             }
             InvalidTrackTag { .. } => {
                 "Invalid track tag has found. This file dosen't follow SMF format."
