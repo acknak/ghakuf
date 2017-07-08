@@ -1,4 +1,5 @@
 use formats::*;
+use std::fmt;
 
 pub trait MessageTool {
     fn binary(&self) -> Vec<u8>;
@@ -97,6 +98,56 @@ impl Message {
         }
     }
 }
+impl fmt::Display for Message {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use messages::Message::*;
+        match *self {
+            MetaEvent {
+                delta_time,
+                ref event,
+                ref data,
+            } => {
+                write!(
+                    f,
+                    "(delta time: {:>4}, Meta Event: {}, data: {:?})",
+                    delta_time,
+                    event,
+                    data
+                )
+            }
+            MidiEvent {
+                delta_time,
+                ref event,
+            } => {
+                write!(
+                    f,
+                    "(delta time: {:>4}, MIDI Event: {})",
+                    delta_time,
+                    event,
+                )
+            }
+            SysExEvent {
+                delta_time,
+                ref event,
+                ref data,
+            } => {
+                write!(
+                    f,
+                    "(delta time: {:>4}, System Exclusive Event: {}, data: {:?})",
+                    delta_time,
+                    event,
+                    data
+                )
+            }
+            TrackChange => {
+                write!(
+                    f,
+                    "Track Change",
+                )
+            }
+        }
+    }
+}
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum MetaEvent {
@@ -169,6 +220,29 @@ impl MessageTool for MetaEvent {
     }
     fn status_byte(&self) -> u8 {
         0xff
+    }
+}
+impl fmt::Display for MetaEvent {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use messages::MetaEvent::*;
+        match *self {
+            SequenceNumber => write!(f, "SequenceNumber"),
+            TextEvent => write!(f, "TextEvent"),
+            CopyrightNotice => write!(f, "CopyrightNotice"),
+            SequenceOrTrackName => write!(f, "SequenceOrTrackName"),
+            InstrumentName => write!(f, "InstrumentName"),
+            Lyric => write!(f, "Lyric"),
+            Marker => write!(f, "Marker"),
+            CuePoint => write!(f, "CuePoint"),
+            MIDIChannelPrefix => write!(f, "MIDIChannelPrefix"),
+            EndOfTrack => write!(f, "EndOfTrack"),
+            SetTempo => write!(f, "SetTempo"),
+            SMTPEOffset => write!(f, "SMTPEOffset"),
+            TimeSignature => write!(f, "TimeSignature"),
+            KeySignature => write!(f, "KeySignature"),
+            SequencerSpecificMetaEvent => write!(f, "SequencerSpecificMetaEvent"),
+            Unknown { event_type } => write!(f, "(Unknown, event type: {}", event_type),
+        }
     }
 }
 
@@ -313,6 +387,59 @@ impl MessageTool for MidiEvent {
         }
     }
 }
+impl fmt::Display for MidiEvent {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use messages::MidiEvent::*;
+        match *self {
+            NoteOff { ch, note, velocity } => {
+                write!(
+                    f,
+                    "(NoteOff{{ch: {}, note: {}, velocity: {}}})",
+                    ch,
+                    note,
+                    velocity
+                )
+            }
+            NoteOn { ch, note, velocity } => {
+                write!(
+                    f,
+                    "(NoteOn{{ch: {}, note: {}, velocity: {}}})",
+                    ch,
+                    note,
+                    velocity
+                )
+            }
+            PolyphonicKeyPressure { ch, note, velocity } => {
+                write!(
+                    f,
+                    "(PolyphonicKeyPressure{{ch: {}, note: {}, velocity: {}}})",
+                    ch,
+                    note,
+                    velocity
+                )
+            }
+            ControlChange { ch, control, data } => {
+                write!(
+                    f,
+                    "(ControlChange{{ch: {}, control: {}, data: {}}})",
+                    ch,
+                    control,
+                    data
+                )
+            }
+            ProgramChange { ch, program } => {
+                write!(f, "(ProgramChange{{ch: {}, program: {}}})", ch, program)
+            }
+            ChannelPressure { ch, pressure } => {
+                write!(f, "(ChannelPressure{{ch: {}, pressure: {}}})", ch, pressure)
+            }
+            PitchBendChange { ch, data } => {
+                write!(f, "(PitchBendChange{{ch: {}, data: {}}})", ch, data)
+            }
+            Unknown { ch } => write!(f, "(Unknown{{ch: {}}})", ch),
+        }
+    }
+}
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum SysExEvent {
@@ -342,6 +469,16 @@ impl MessageTool for SysExEvent {
             SysExEvent::F0 { .. } => 0xf0,
             SysExEvent::F7 { .. } => 0xf7,
             SysExEvent::Unknown { status, .. } => status,
+        }
+    }
+}
+impl fmt::Display for SysExEvent {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use messages::SysExEvent::*;
+        match *self {
+            F0 => write!(f, "F0"),
+            F7 => write!(f, "F7"),
+            Unknown { status } => write!(f, "(Unknown, status: {}", status),
         }
     }
 }

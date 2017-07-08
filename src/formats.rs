@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Format {
     F0,
@@ -24,6 +26,21 @@ impl Format {
         }
     }
 }
+impl fmt::Display for Format {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use formats::Format::*;
+        write!(
+            f,
+            "{}",
+            match *self {
+                F0 => "Format 0",
+                F1 => "Format 1",
+                F2 => "Format 2",
+                Unknown => "Unknown Format",
+            }
+        )
+    }
+}
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Tag {
@@ -39,7 +56,7 @@ impl Tag {
     }
 }
 
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Clone, Copy)]
 pub struct VLQ {
     // VariableLengthQuantity
     val: u32,
@@ -80,6 +97,22 @@ impl VLQ {
     }
     fn limit_size() -> usize {
         4
+    }
+}
+impl fmt::Debug for VLQ {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "VLQ val: {}, binary: {:?}, len: {}}}",
+            self.val,
+            self.binary(),
+            self.len()
+        )
+    }
+}
+impl fmt::Display for VLQ {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "(VLQ: {})", self.val)
     }
 }
 #[cfg(test)]
