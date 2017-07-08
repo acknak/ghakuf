@@ -343,9 +343,7 @@ impl MessageTool for MidiEvent {
         match *self {
             NoteOff { note, velocity, .. } => vec![self.status_byte(), note, velocity],
             NoteOn { note, velocity, .. } => vec![self.status_byte(), note, velocity],
-            PolyphonicKeyPressure { note, velocity, .. } => {
-                vec![self.status_byte(), note, velocity]
-            }
+            PolyphonicKeyPressure { note, velocity, .. } => vec![self.status_byte(), note, velocity],
             ControlChange { control, data, .. } => vec![self.status_byte(), control, data],
             ProgramChange { program, .. } => vec![self.status_byte(), program],
             ChannelPressure { pressure, .. } => vec![self.status_byte(), pressure],
@@ -427,15 +425,9 @@ impl fmt::Display for MidiEvent {
                     data
                 )
             }
-            ProgramChange { ch, program } => {
-                write!(f, "(ProgramChange{{ch: {}, program: {}}})", ch, program)
-            }
-            ChannelPressure { ch, pressure } => {
-                write!(f, "(ChannelPressure{{ch: {}, pressure: {}}})", ch, pressure)
-            }
-            PitchBendChange { ch, data } => {
-                write!(f, "(PitchBendChange{{ch: {}, data: {}}})", ch, data)
-            }
+            ProgramChange { ch, program } => write!(f, "(ProgramChange{{ch: {}, program: {}}})", ch, program),
+            ChannelPressure { ch, pressure } => write!(f, "(ChannelPressure{{ch: {}, pressure: {}}})", ch, pressure),
+            PitchBendChange { ch, data } => write!(f, "(PitchBendChange{{ch: {}, data: {}}})", ch, data),
             Unknown { ch } => write!(f, "(Unknown{{ch: {}}})", ch),
         }
     }
