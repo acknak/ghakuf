@@ -438,7 +438,7 @@ impl MidiEventBuilder {
     /// builder.push(0x01);
     /// ```
     ///
-    /// Note: MidiEventBuilder can accept only 2 or 3 u8 value due to SMF restriction.
+    /// *Note*: MidiEventBuilder can accept only 2 or 3 u8 value due to SMF restriction.
     pub fn push(&mut self, data: u8) {
         if self.shortage > 0 {
             self.data.push(data);
