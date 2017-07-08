@@ -57,16 +57,31 @@ fn main() {
 struct HogeHandler {}
 impl Handler for HogeHandler {
     fn header(&mut self, format: Format, track: u16, time_base: u16) {
-        println!("Header found!");
+        println!("{} SMF", format);
+        println!("track: {}, time base: {}", track, time_base);
     }
     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-        println!("Meta event found!");
+        println!(
+            "delta time: {:>4}, Meta event: {}, data: {:?}",
+            delta_time,
+            event,
+            data
+        );
     }
     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-        println!("MIDI event found!");
+        println!(
+            "delta time: {:>4}, MIDI event: {}",
+            delta_time,
+            event,
+        );
     }
     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-        println!("System exclusive event found!");
+        println!(
+            "delta time: {:>4}, System Exclusive Event: {}, data: {:?}",
+            delta_time,
+            event,
+            data
+        );
     }
     fn track_change(&mut self) {
         println!("Track change occcurs!");
