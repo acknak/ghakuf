@@ -1,12 +1,75 @@
 use formats::*;
 use std::fmt;
 
+/// Common methods among three SMF Events.
+///
+/// # Examples
+///
+/// ```
+/// use ghakuf::messages::{MessageTool, MetaEvent, MidiEvent, SysExEvent};
+///
+/// assert_eq!(MetaEvent::EndOfTrack.binary(), [0xff, 0x2f]);
+/// assert_eq!(MidiEvent::NoteOn { ch: 0x03, note: 0x00, velocity: 0x65 }.len(), 3);
+/// assert_eq!(SysExEvent::F0.status_byte(), 0xf0);
+/// ```
 pub trait MessageTool {
+    /// Returns message's binary array for SMF.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::{MessageTool, MetaEvent, MidiEvent, SysExEvent};
+    ///
+    /// assert_eq!(MetaEvent::Lyric.binary(), [0xff, 0x05]);
+    /// assert_eq!(
+    ///     MidiEvent::NoteOff { ch: 0x04, note: 0x02, velocity: 0x00 }.binary(),
+    ///     [0x84, 0x02, 0x00]
+    /// );
+    /// assert_eq!(SysExEvent::F7.binary(), [0xf7]);
+    /// ```
     fn binary(&self) -> Vec<u8>;
+    /// Returns length of message's binary array for SMF.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::{MessageTool, MetaEvent, MidiEvent, SysExEvent};
+    ///
+    /// assert_eq!(MetaEvent::InstrumentName.len(), 2);
+    /// assert_eq!(MidiEvent::ChannelPressure { ch: 0x05, pressure: 0x45 }.len(), 2);
+    /// assert_eq!(SysExEvent::F0.len(), 1);
+    /// ```
     fn len(&self) -> usize;
+    /// Returns message's status byte for SMF.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::{MessageTool, MetaEvent, MidiEvent, SysExEvent};
+    ///
+    /// assert_eq!(MetaEvent::Lyric.status_byte(), 0xff);
+    /// assert_eq!(MidiEvent::ProgramChange { ch: 0x01, program: 0x03 }.status_byte(), 0xc1);
+    /// assert_eq!(SysExEvent::F7.status_byte(), 0xf7);
+    /// ```
     fn status_byte(&self) -> u8;
 }
 
+/// An enum representing three SMF events and track change event.
+///
+/// # Examples
+///
+/// ```
+/// use ghakuf::messages::{Message, MetaEvent};
+/// use ghakuf::formats::VLQ;
+///
+/// let mut messages: Vec<Message> = Vec::new();
+/// messages.push(Message::MetaEvent {
+///     delta_time: VLQ::new(0),
+///     event: MetaEvent::Lyric,
+///     data: b"aitakute_aitakute_furufuru".to_vec(),
+/// });
+/// messages.push(Message::TrackChange);
+/// ```
 #[derive(PartialEq, Clone, Debug)]
 pub enum Message {
     MetaEvent {
@@ -23,6 +86,22 @@ pub enum Message {
     TrackChange,
 }
 impl Message {
+    /// Returns binary array for SMF.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::{Message, MidiEvent};
+    /// use ghakuf::formats::VLQ;
+    ///
+    /// assert_eq!(
+    ///     Message::MidiEvent {
+    ///         delta_time: VLQ::new(0),
+    ///         event: MidiEvent::NoteOn { ch: 0x01, note: 0x3c, velocity: 0x7f }
+    ///     }.binary(),
+    ///    vec![0x00, 0x91, 0x3c, 0x7f]
+    /// );
+    /// ```
     pub fn binary(&self) -> Vec<u8> {
         let mut binary: Vec<u8> = Vec::new();
         use messages::Message::*;
@@ -67,6 +146,23 @@ impl Message {
         }
         binary
     }
+    /// Return binary array length of message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::{Message, MetaEvent};
+    /// use ghakuf::formats::VLQ;
+    ///
+    /// assert_eq!(
+    ///     Message::MetaEvent {
+    ///         delta_time: VLQ::new(0),
+    ///         event: MetaEvent::Lyric,
+    ///         data: b"aitanakatta_aitanakatta_no!".to_vec(),
+    ///     }.len(),
+    ///    31
+    /// );
+    /// ```
     pub fn len(&self) -> usize {
         use messages::Message::*;
         match *self {
@@ -149,6 +245,16 @@ impl fmt::Display for Message {
     }
 }
 
+/// An enum representing Meta event of SMF.
+///
+/// # Examples
+///
+/// ```
+/// use ghakuf::messages::{MessageTool, MetaEvent};
+///
+/// let event: MetaEvent = MetaEvent::SetTempo;
+/// assert_eq!(event.binary(), [0xff, 0x51]);
+/// ```
 #[derive(PartialEq, Clone, Debug)]
 pub enum MetaEvent {
     SequenceNumber,
@@ -169,6 +275,16 @@ pub enum MetaEvent {
     Unknown { event_type: u8 },
 }
 impl MetaEvent {
+    /// Builds MetaEvent from status value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::MetaEvent;
+    ///
+    /// let event: MetaEvent = MetaEvent::new(0x06);
+    /// assert_eq!(event, MetaEvent::Marker);
+    /// ```
     pub fn new(event_type: u8) -> MetaEvent {
         match event_type {
             0x00 => MetaEvent::SequenceNumber,
@@ -246,6 +362,16 @@ impl fmt::Display for MetaEvent {
     }
 }
 
+/// An enum representing Midi event of SMF.
+///
+/// # Examples
+///
+/// ```
+/// use ghakuf::messages::{MessageTool, MidiEvent};
+///
+/// let event: MidiEvent = MidiEvent::NoteOff { ch: 0x04, note: 0x02, velocity: 0x00 };
+/// assert_eq!(event.binary(), [0x84, 0x02, 0x00]);
+/// ```
 #[derive(PartialEq, Clone, Debug)]
 pub enum MidiEvent {
     NoteOff { ch: u8, note: u8, velocity: u8 },
@@ -257,12 +383,38 @@ pub enum MidiEvent {
     PitchBendChange { ch: u8, data: i16 },
     Unknown { ch: u8 },
 }
+/// A struct for building Midi event.
+///
+/// # Examples
+///
+/// ```
+/// use ghakuf::messages::{MidiEvent, MidiEventBuilder};
+///
+/// let mut builder = MidiEventBuilder::new(0x91);
+/// builder.push(0x9c);
+/// builder.push(0x13);
+/// let event: MidiEvent = builder.build();
+///
+/// assert_eq!(
+///     MidiEvent::NoteOn { ch: 0x01, note: 0x9c, velocity: 0x13 },
+///     event
+/// )
+/// ```
 pub struct MidiEventBuilder {
     status: u8,
     shortage: u8,
     data: Vec<u8>,
 }
 impl MidiEventBuilder {
+    /// Builds MidiEventBuilder from Midi status.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::{MidiEvent, MidiEventBuilder};
+    ///
+    /// let mut builder = MidiEventBuilder::new(0x91);
+    /// ```
     pub fn new(status: u8) -> MidiEventBuilder {
         MidiEventBuilder {
             status: status,
@@ -274,15 +426,60 @@ impl MidiEventBuilder {
             },
         }
     }
+    /// Pushed u8 value to MidiEventBuilder.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::MidiEventBuilder;
+    ///
+    /// let mut builder = MidiEventBuilder::new(0x91);
+    /// builder.push(0x00);
+    /// builder.push(0x01);
+    /// ```
+    ///
+    /// *Note*: MidiEventBuilder can accept only 2 or 3 u8 value due to SMF restriction.
     pub fn push(&mut self, data: u8) {
         if self.shortage > 0 {
             self.data.push(data);
             self.shortage -= 1;
         }
     }
+    /// Returns num till MidiEventBuilder saturated.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::MidiEventBuilder;
+    ///
+    /// let mut builder = MidiEventBuilder::new(0x91);
+    /// assert_eq!(builder.shortage(), 2);
+    /// builder.push(0x00);
+    /// assert_eq!(builder.shortage(), 1);
+    /// builder.push(0x02);
+    /// assert_eq!(builder.shortage(), 0);
+    ///
+    /// let mut builder = MidiEventBuilder::new(0xc0);
+    /// assert_eq!(builder.shortage(), 1);
+    /// builder.push(0x00);
+    /// assert_eq!(builder.shortage(), 0);
+    /// ```
     pub fn shortage(&self) -> u8 {
         self.shortage
     }
+    /// Builds MidiEvnet from MidiEventBuilder.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::{MidiEvent, MidiEventBuilder};
+    ///
+    /// let mut builder = MidiEventBuilder::new(0x91);
+    /// builder.push(0x00);
+    /// builder.push(0x01);
+    /// builder.push(0x02);
+    /// let event: MidiEvent = builder.build();
+    /// ```
     pub fn build(&self) -> MidiEvent {
         match self.status & 0xf0 {
             0x80 => {
@@ -343,9 +540,7 @@ impl MessageTool for MidiEvent {
         match *self {
             NoteOff { note, velocity, .. } => vec![self.status_byte(), note, velocity],
             NoteOn { note, velocity, .. } => vec![self.status_byte(), note, velocity],
-            PolyphonicKeyPressure { note, velocity, .. } => {
-                vec![self.status_byte(), note, velocity]
-            }
+            PolyphonicKeyPressure { note, velocity, .. } => vec![self.status_byte(), note, velocity],
             ControlChange { control, data, .. } => vec![self.status_byte(), control, data],
             ProgramChange { program, .. } => vec![self.status_byte(), program],
             ChannelPressure { pressure, .. } => vec![self.status_byte(), pressure],
@@ -427,20 +622,24 @@ impl fmt::Display for MidiEvent {
                     data
                 )
             }
-            ProgramChange { ch, program } => {
-                write!(f, "(ProgramChange{{ch: {}, program: {}}})", ch, program)
-            }
-            ChannelPressure { ch, pressure } => {
-                write!(f, "(ChannelPressure{{ch: {}, pressure: {}}})", ch, pressure)
-            }
-            PitchBendChange { ch, data } => {
-                write!(f, "(PitchBendChange{{ch: {}, data: {}}})", ch, data)
-            }
+            ProgramChange { ch, program } => write!(f, "(ProgramChange{{ch: {}, program: {}}})", ch, program),
+            ChannelPressure { ch, pressure } => write!(f, "(ChannelPressure{{ch: {}, pressure: {}}})", ch, pressure),
+            PitchBendChange { ch, data } => write!(f, "(PitchBendChange{{ch: {}, data: {}}})", ch, data),
             Unknown { ch } => write!(f, "(Unknown{{ch: {}}})", ch),
         }
     }
 }
 
+/// An enum representing System Exclusive event of SMF.
+///
+/// # Examples
+///
+/// ```
+/// use ghakuf::messages::{MessageTool, SysExEvent};
+///
+/// let event: SysExEvent = SysExEvent::F0;
+/// assert_eq!(event.status_byte(), 0xf0);
+/// ```
 #[derive(PartialEq, Clone, Debug)]
 pub enum SysExEvent {
     F0,
@@ -448,6 +647,16 @@ pub enum SysExEvent {
     Unknown { status: u8 },
 }
 impl SysExEvent {
+    /// Builds SysExEvent from status value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::messages::SysExEvent;
+    ///
+    /// let event: SysExEvent = SysExEvent::new(0xf0);
+    /// assert_eq!(event, SysExEvent::F0);
+    /// ```
     pub fn new(status: u8) -> SysExEvent {
         use messages::SysExEvent::*;
         match status {

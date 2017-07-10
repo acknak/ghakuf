@@ -8,12 +8,63 @@ use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::mem::size_of;
 use std::path::PathBuf;
 
+/// `ghakuf`'s SMF parser.
+///
+/// # Examples
+///
+/// ```
+/// use ghakuf::formats::*;
+/// use ghakuf::messages::*;
+/// use ghakuf::reader::handler::*;
+/// use ghakuf::reader::reader::*;
+/// use std::path::PathBuf;
+///
+/// let mut reader = Reader::new(
+///     Box::new(HogeHandler {}),
+///     PathBuf::from("tests/test.mid"),
+/// ).unwrap();
+/// reader.read();
+///
+/// struct HogeHandler {}
+/// impl Handler for HogeHandler {
+///     fn header(&mut self, format: Format, track: u16, time_base: u16) {}
+///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {}
+///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {}
+///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {}
+///     fn track_change(&mut self) {}
+/// }
+/// ```
 pub struct Reader {
     file: BufReader<File>,
     handlers: Vec<Box<Handler>>,
     path: PathBuf,
 }
 impl Reader {
+    /// Builds Reader with handler(observer) and SMF file path.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::formats::*;
+    /// use ghakuf::messages::*;
+    /// use ghakuf::reader::handler::*;
+    /// use ghakuf::reader::reader::*;
+    /// use std::path::PathBuf;
+    ///
+    /// let mut reader = Reader::new(
+    ///     Box::new(FugaHandler {}),
+    ///     PathBuf::from("tests/test.mid"),
+    /// );
+    ///
+    /// struct FugaHandler {}
+    /// impl Handler for FugaHandler {
+    ///     fn header(&mut self, format: Format, track: u16, time_base: u16) {}
+    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {}
+    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {}
+    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {}
+    ///     fn track_change(&mut self) {}
+    /// }
+    /// ```
     pub fn new(handler: Box<Handler>, path: PathBuf) -> Result<Reader, ReadError> {
         let mut handlers = Vec::new();
         handlers.push(handler);
@@ -23,9 +74,70 @@ impl Reader {
             handlers: handlers,
         })
     }
-    pub fn add_hanlder(&mut self, handler: Box<Handler>) {
+    /// Pushes Handler to Reader.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::formats::*;
+    /// use ghakuf::messages::*;
+    /// use ghakuf::reader::handler::*;
+    /// use ghakuf::reader::reader::*;
+    /// use std::path::PathBuf;
+    ///
+    /// let mut reader = Reader::new(
+    ///     Box::new(FugaHandler {}),
+    ///     PathBuf::from("tests/test.mid"),
+    /// ).unwrap();
+    /// reader.push_hanlder(Box::new(NyanHandler {}));
+    ///
+    /// struct FugaHandler {}
+    /// impl Handler for FugaHandler {
+    ///     fn header(&mut self, format: Format, track: u16, time_base: u16) {}
+    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {}
+    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {}
+    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {}
+    ///     fn track_change(&mut self) {}
+    /// }
+    ///
+    /// struct NyanHandler {}
+    /// impl Handler for NyanHandler {
+    ///     fn header(&mut self, format: Format, track: u16, time_base: u16) {}
+    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {}
+    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {}
+    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {}
+    ///     fn track_change(&mut self) {}
+    /// }
+    /// ```
+    pub fn push_hanlder(&mut self, handler: Box<Handler>) {
         self.handlers.push(handler);
     }
+    /// Parses SMF messages and fires(broadcasts) handlers.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::formats::*;
+    /// use ghakuf::messages::*;
+    /// use ghakuf::reader::handler::*;
+    /// use ghakuf::reader::reader::*;
+    /// use std::path::PathBuf;
+    ///
+    /// let mut reader = Reader::new(
+    ///     Box::new(HogeHandler {}),
+    ///     PathBuf::from("tests/test.mid"),
+    /// ).unwrap();
+    /// reader.read();
+    ///
+    /// struct HogeHandler {}
+    /// impl Handler for HogeHandler {
+    ///     fn header(&mut self, format: Format, track: u16, time_base: u16) {}
+    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {}
+    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {}
+    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {}
+    ///     fn track_change(&mut self) {}
+    /// }
+    /// ```
     pub fn read(&mut self) -> Result<(), ReadError> {
         self.file.seek(SeekFrom::Start(0))?;
         self.check_tag(Tag::Header)?;
