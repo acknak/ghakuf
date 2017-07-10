@@ -15,10 +15,11 @@
 //! use ghakuf::reader::reader::*;
 //! use std::path::PathBuf;
 //!
-//! let _ = Reader::new(
+//! let mut reader = Reader::new(
 //!     Box::new(HogeHandler {}),
 //!     PathBuf::from("tests/test.mid"),
-//! );
+//! ).unwrap();
+//! reader.read();
 //!
 //! struct HogeHandler {}
 //! impl Handler for HogeHandler {
