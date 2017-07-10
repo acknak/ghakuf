@@ -8,6 +8,8 @@ A Rust library for parsing/building SMF (Standard MIDI File).
 
 ## Examples
 
+`ghakuf` has parse module and build module separatory.
+
 ### Perser
 
 `ghakuf`'s parser is made by Event-driven online algorithm. You must prepare original handler implementing Handler trait to catch SMF messages. Any number of handlers you can add for parser if you want.
