@@ -17,11 +17,13 @@ use ghakuf::formats::*;
 use ghakuf::messages::*;
 use ghakuf::reader::handler::*;
 use ghakuf::reader::reader::*;
+use std::path::PathBuf;
 
 let mut reader = Reader::new(
     Box::new(HogeHandler {}),
     PathBuf::from("test.mid"),
 ).unwrap();
+reader.read();
 
 struct HogeHandler {}
 impl Handler for HogeHandler {
@@ -51,6 +53,7 @@ impl Handler for HogeHandler {
 use ghakuf::formats::*;
 use ghakuf::messages::*;
 use ghakuf::writer::writer::*;
+use std::path::PathBuf;
 
 let mut writer = Writer::new();
 writer.running_status(true);
