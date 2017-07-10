@@ -112,7 +112,7 @@ impl Reader {
     pub fn push_hanlder(&mut self, handler: Box<Handler>) {
         self.handlers.push(handler);
     }
-    /// Parses SMF messages and fires handlers.
+    /// Parses SMF messages and fires(broadcasts) handlers.
     ///
     /// # Examples
     ///
