@@ -2,7 +2,7 @@
 authors = ["acknak <acknak39@gmail.com>"]
 description = "A Rust library for parsing/building SMF (Standard MIDI File)."
 license = "MIT/Apache-2.0"
-keywords = ["smf", "Standard MIDI File", "parser", "reader", "builder", "writer"]
+keywords = ["SMF", "MIDI", "parser", "reader", "builder", "writer"]
 name = "ghakuf"
 readme = "README.md"
 repository = "https://github.com/acknak/ghakuf"
