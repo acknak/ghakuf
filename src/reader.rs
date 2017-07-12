@@ -318,7 +318,7 @@ impl Reader {
     }
 }
 
-///  Handler(Observer) of reader::reader::Reader.
+///  Handler(Observer) of Reader.
 ///
 ///  # Examples
 ///
