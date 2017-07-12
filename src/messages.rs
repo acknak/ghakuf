@@ -443,6 +443,8 @@ impl MidiEventBuilder {
         if self.shortage > 0 {
             self.data.push(data);
             self.shortage -= 1;
+        } else {
+            warn!("Your data was ignored. MidiEventBuilder can accept only 2 or 3 u8 value due to SMF restriction.");
         }
     }
     /// Returns num till MidiEventBuilder saturated.

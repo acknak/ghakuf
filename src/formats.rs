@@ -325,11 +325,14 @@ impl VLQBuilder {
     ///
     /// *Note*: VLQBuilder can accept only 4 u8 value due to SMF restriction. This method ignore after the fifth.
     pub fn push(&mut self, data: u8) -> &mut VLQBuilder {
-        if !self.closed {
+        if self.closed {
+            warn!("Your data was ignored. VLQBuilder can accept only 4 u8 value due to SMF restriction.");
+        } else {
             self.val = self.val << 7 | ((data & 0b0111_1111) as u32);
         }
         if data & 0b00000000_00000000_00000000_10000000 == 0 || self.val > 0b1111111_1111111_1111111 {
             self.closed = true;
+            info!("VLQBuilder closed.")
         }
         self
     }
