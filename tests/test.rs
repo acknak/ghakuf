@@ -5,7 +5,7 @@ use byteorder::{BigEndian, WriteBytesExt};
 use ghakuf::formats::*;
 use ghakuf::messages::*;
 use ghakuf::reader::*;
-use ghakuf::writer::writer::*;
+use ghakuf::writer::*;
 use std::fs::{OpenOptions, File};
 use std::io::prelude::*;
 use std::io::Read;
