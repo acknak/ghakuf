@@ -2,8 +2,7 @@ extern crate ghakuf;
 
 use ghakuf::formats::*;
 use ghakuf::messages::*;
-use ghakuf::reader::handler::*;
-use ghakuf::reader::reader::*;
+use ghakuf::reader::*;
 use ghakuf::writer::writer::*;
 use std::path::PathBuf;
 
