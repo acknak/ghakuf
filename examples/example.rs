@@ -1,11 +1,8 @@
 extern crate ghakuf;
 
-use ghakuf::formats::*;
 use ghakuf::messages::*;
-use ghakuf::reader::handler::*;
-use ghakuf::reader::reader::*;
-use ghakuf::writer::writer::*;
-use std::path::PathBuf;
+use ghakuf::reader::*;
+use ghakuf::writer::*;
 
 fn main() {
     // build example
@@ -13,18 +10,18 @@ fn main() {
     writer.running_status(true);
     let tempo: u32 = 60 * 1000000 / 102; //bpm:102
     writer.push(Message::MetaEvent {
-        delta_time: VLQ::new(0),
+        delta_time: 0,
         event: MetaEvent::SetTempo,
         data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
     });
     writer.push(Message::MetaEvent {
-        delta_time: VLQ::new(0),
+        delta_time: 0,
         event: MetaEvent::EndOfTrack,
         data: Vec::new(),
     });
     writer.push(Message::TrackChange);
     writer.push(Message::MidiEvent {
-        delta_time: VLQ::new(0),
+        delta_time: 0,
         event: MidiEvent::NoteOn {
             ch: 0,
             note: 0x3c,
@@ -32,7 +29,7 @@ fn main() {
         },
     });
     writer.push(Message::MidiEvent {
-        delta_time: VLQ::new(192),
+        delta_time: 192,
         event: MidiEvent::NoteOn {
             ch: 0,
             note: 0x40,
@@ -40,25 +37,26 @@ fn main() {
         },
     });
     writer.push(Message::MetaEvent {
-        delta_time: VLQ::new(0),
+        delta_time: 0,
         event: MetaEvent::EndOfTrack,
         data: Vec::new(),
     });
-    writer.write(PathBuf::from("examples/example.mid")).unwrap();
+    writer.write("examples/example.mid").unwrap();
 
     // parse example
-    let mut reader = Reader::new(
-        Box::new(HogeHandler {}),
-        PathBuf::from("examples/example.mid"),
-    ).unwrap();
+    let mut reader = Reader::new(Box::new(HogeHandler {}), "examples/example.mid").unwrap();
     reader.read().unwrap();
 }
 
 struct HogeHandler {}
 impl Handler for HogeHandler {
-    fn header(&mut self, format: Format, track: u16, time_base: u16) {
-        println!("{} SMF", format);
-        println!("track: {}, time base: {}", track, time_base);
+    fn header(&mut self, format: u16, track: u16, time_base: u16) {
+        println!(
+            "SMF format: {}, track: {}, time base: {}",
+            format,
+            track,
+            time_base
+        );
     }
     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
         println!(

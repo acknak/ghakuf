@@ -22,7 +22,7 @@ pub trait MessageTool {
     ///
     /// assert_eq!(MetaEvent::Lyric.binary(), [0xff, 0x05]);
     /// assert_eq!(
-    ///     MidiEvent::NoteOff { ch: 0x04, note: 0x02, velocity: 0x00 }.binary(),
+    ///     MidiEvent::NoteOff{ ch: 0x04, note: 0x02, velocity: 0x00 }.binary(),
     ///     [0x84, 0x02, 0x00]
     /// );
     /// assert_eq!(SysExEvent::F7.binary(), [0xf7]);
@@ -60,11 +60,10 @@ pub trait MessageTool {
 ///
 /// ```
 /// use ghakuf::messages::{Message, MetaEvent};
-/// use ghakuf::formats::VLQ;
 ///
 /// let mut messages: Vec<Message> = Vec::new();
 /// messages.push(Message::MetaEvent {
-///     delta_time: VLQ::new(0),
+///     delta_time: 0,
 ///     event: MetaEvent::Lyric,
 ///     data: b"aitakute_aitakute_furufuru".to_vec(),
 /// });
@@ -73,13 +72,13 @@ pub trait MessageTool {
 #[derive(PartialEq, Clone, Debug)]
 pub enum Message {
     MetaEvent {
-        delta_time: VLQ,
+        delta_time: u32,
         event: MetaEvent,
         data: Vec<u8>,
     },
-    MidiEvent { delta_time: VLQ, event: MidiEvent },
+    MidiEvent { delta_time: u32, event: MidiEvent },
     SysExEvent {
-        delta_time: VLQ,
+        delta_time: u32,
         event: SysExEvent,
         data: Vec<u8>,
     },
@@ -92,11 +91,10 @@ impl Message {
     ///
     /// ```
     /// use ghakuf::messages::{Message, MidiEvent};
-    /// use ghakuf::formats::VLQ;
     ///
     /// assert_eq!(
     ///     Message::MidiEvent {
-    ///         delta_time: VLQ::new(0),
+    ///         delta_time: 0,
     ///         event: MidiEvent::NoteOn { ch: 0x01, note: 0x3c, velocity: 0x7f }
     ///     }.binary(),
     ///    vec![0x00, 0x91, 0x3c, 0x7f]
@@ -111,7 +109,7 @@ impl Message {
                 ref event,
                 ref data,
             } => {
-                binary.append(&mut delta_time.binary());
+                binary.append(&mut VLQ::new(delta_time).binary());
                 binary.append(&mut event.binary());
                 binary.extend_from_slice(&VLQ::new(data.len() as u32).binary());
                 binary.extend_from_slice(&data);
@@ -120,7 +118,7 @@ impl Message {
                 delta_time,
                 ref event,
             } => {
-                binary.append(&mut delta_time.binary());
+                binary.append(&mut VLQ::new(delta_time).binary());
                 binary.append(&mut event.binary());
             }
             SysExEvent {
@@ -128,7 +126,7 @@ impl Message {
                 ref event,
                 ref data,
             } => {
-                binary.append(&mut delta_time.binary());
+                binary.append(&mut VLQ::new(delta_time).binary());
                 binary.append(&mut event.binary());
                 use messages::SysExEvent::*;
                 match *event {
@@ -152,11 +150,10 @@ impl Message {
     ///
     /// ```
     /// use ghakuf::messages::{Message, MetaEvent};
-    /// use ghakuf::formats::VLQ;
     ///
     /// assert_eq!(
     ///     Message::MetaEvent {
-    ///         delta_time: VLQ::new(0),
+    ///         delta_time: 0,
     ///         event: MetaEvent::Lyric,
     ///         data: b"aitanakatta_aitanakatta_no!".to_vec(),
     ///     }.len(),
@@ -170,18 +167,18 @@ impl Message {
                 delta_time,
                 ref event,
                 ref data,
-            } => delta_time.len() + event.len() + (VLQ::new(data.len() as u32).len()) + data.len(),
+            } => VLQ::new(delta_time).len() + event.len() + (VLQ::new(data.len() as u32).len()) + data.len(),
             MidiEvent {
                 delta_time,
                 ref event,
-            } => delta_time.len() + event.len(),
+            } => VLQ::new(delta_time).len() + event.len(),
             SysExEvent {
                 delta_time,
                 ref event,
                 ref data,
             } => {
                 use messages::SysExEvent::*;
-                delta_time.len() +
+                VLQ::new(delta_time).len() +
                     VLQ::new(
                         data.len() as u32 +
                             match *event {
@@ -443,6 +440,8 @@ impl MidiEventBuilder {
         if self.shortage > 0 {
             self.data.push(data);
             self.shortage -= 1;
+        } else {
+            warn!("Your data was ignored. MidiEventBuilder can accept only 2 or 3 u8 value due to SMF restriction.");
         }
     }
     /// Returns num till MidiEventBuilder saturated.

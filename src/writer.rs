@@ -1,10 +1,10 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use formats::*;
 use messages::*;
-use std::fs::OpenOptions;
+use std::fs;
 use std::io;
-use std::io::{BufWriter, Write};
-use std::path::PathBuf;
+use std::io::Write;
+use std::path;
 
 /// `ghakuf`'s SMF builder.
 ///
@@ -13,39 +13,37 @@ use std::path::PathBuf;
 /// # Examples
 ///
 /// ```
-/// use ghakuf::formats::*;
 /// use ghakuf::messages::*;
-/// use ghakuf::writer::writer::*;
-/// use std::path::PathBuf;
+/// use ghakuf::writer::*;
 ///
 /// let mut writer = Writer::new();
 /// writer.running_status(true);
 /// let tempo: u32 = 60 * 1000000 / 102; //bpm:102
 /// writer.push(Message::MetaEvent {
-///     delta_time: VLQ::new(0),
+///     delta_time: 0,
 ///     event: MetaEvent::SetTempo,
 ///     data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
 /// });
 /// writer.push(Message::MetaEvent {
-///     delta_time: VLQ::new(0),
+///     delta_time: 0,
 ///     event: MetaEvent::EndOfTrack,
 ///     data: Vec::new(),
 /// });
 /// writer.push(Message::TrackChange);
 /// writer.push(Message::MidiEvent {
-///     delta_time: VLQ::new(0),
+///     delta_time: 0,
 ///     event: MidiEvent::NoteOn { ch: 0, note: 0x3c, velocity: 0x7f },
 /// });
 /// writer.push(Message::MidiEvent {
-///     delta_time: VLQ::new(192),
+///     delta_time: 192,
 ///     event: MidiEvent::NoteOn { ch: 0, note: 0x40, velocity: 0 },
 /// });
 /// writer.push(Message::MetaEvent {
-///     delta_time: VLQ::new(0),
+///     delta_time: 0,
 ///     event: MetaEvent::EndOfTrack,
 ///     data: Vec::new(),
 /// });
-/// writer.write(PathBuf::from("tests/test.mid"));
+/// writer.write("tests/test.mid");
 /// ```
 pub struct Writer {
     messages: Vec<Message>,
@@ -66,7 +64,7 @@ impl Writer {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::writer::writer::Writer;
+    /// use ghakuf::writer::Writer;
     ///
     /// let writer: Writer = Writer::new();
     /// ```
@@ -84,7 +82,7 @@ impl Writer {
     ///
     /// ```
     /// use ghakuf::messages::Message;
-    /// use ghakuf::writer::writer::Writer;
+    /// use ghakuf::writer::Writer;
     ///
     /// let mut writer: Writer = Writer::new();
     /// writer.push(Message::TrackChange);
@@ -98,13 +96,12 @@ impl Writer {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::formats::*;
     /// use ghakuf::messages::{Message, MidiEvent};
-    /// use ghakuf::writer::writer::Writer;
+    /// use ghakuf::writer::Writer;
     ///
     /// let mut writer: Writer = Writer::new();
     /// writer.push(Message::MidiEvent {
-    ///     delta_time: VLQ::new(0),
+    ///     delta_time: 0,
     ///     event: MidiEvent::NoteOn { ch: 0, note: 0x40, velocity: 0 },
     /// });
     /// ```
@@ -116,18 +113,17 @@ impl Writer {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::formats::*;
     /// use ghakuf::messages::{Message, MetaEvent, MidiEvent};
-    /// use ghakuf::writer::writer::Writer;
+    /// use ghakuf::writer::Writer;
     ///
     /// let mut writer: Writer = Writer::new();
     /// writer.push(Message::TrackChange);
     /// writer.push(Message::MidiEvent {
-    ///     delta_time: VLQ::new(0),
+    ///     delta_time: 0,
     ///     event: MidiEvent::NoteOn { ch: 0, note: 0x40, velocity: 0 },
     /// });
     /// writer.push(Message::MetaEvent {
-    ///     delta_time: VLQ::new(0),
+    ///     delta_time: 0,
     ///     event: MetaEvent::EndOfTrack,
     ///     data: Vec::new(),
     /// });
@@ -136,7 +132,7 @@ impl Writer {
     ///     vec![
     ///         Message::TrackChange,
     ///         Message::MetaEvent {
-    ///             delta_time: VLQ::new(0),
+    ///             delta_time: 0,
     ///             event: MetaEvent::EndOfTrack,
     ///             data: Vec::new(),
     ///         }
@@ -151,14 +147,13 @@ impl Writer {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::formats::Format;
-    /// use ghakuf::writer::writer::Writer;
+    /// use ghakuf::writer::Writer;
     ///
     /// let mut writer: Writer = Writer::new();
-    /// writer.format(Format::F0);
+    /// writer.format(0);
     /// ```
-    pub fn format(&mut self, format: Format) -> &mut Writer {
-        self.format = format;
+    pub fn format(&mut self, format: u16) -> &mut Writer {
+        self.format = Format::new(format);
         self
     }
     /// Sets SMF time base value.
@@ -166,8 +161,7 @@ impl Writer {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::formats::Format;
-    /// use ghakuf::writer::writer::Writer;
+    /// use ghakuf::writer::Writer;
     ///
     /// let mut writer: Writer = Writer::new();
     /// writer.time_base(960);
@@ -181,8 +175,7 @@ impl Writer {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::formats::Format;
-    /// use ghakuf::writer::writer::Writer;
+    /// use ghakuf::writer::Writer;
     ///
     /// let mut writer: Writer = Writer::new();
     /// writer.running_status(true);
@@ -196,38 +189,38 @@ impl Writer {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::formats::*;
     /// use ghakuf::messages::*;
-    /// use ghakuf::writer::writer::*;
+    /// use ghakuf::writer::*;
     /// use std::path::PathBuf;
     ///
     /// let mut writer = Writer::new();
     /// let tempo: u32 = 60 * 1000000 / 102; //bpm:102
     /// writer.push(Message::MetaEvent {
-    ///     delta_time: VLQ::new(0),
+    ///     delta_time: 0,
     ///     event: MetaEvent::SetTempo,
     ///     data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
     /// });
     /// writer.push(Message::MetaEvent {
-    ///     delta_time: VLQ::new(0),
+    ///     delta_time: 0,
     ///     event: MetaEvent::EndOfTrack,
     ///     data: Vec::new(),
     /// });
     /// writer.push(Message::TrackChange);
     /// writer.push(Message::MidiEvent {
-    ///     delta_time: VLQ::new(0),
+    ///     delta_time: 0,
     ///     event: MidiEvent::NoteOn { ch: 0, note: 0x3c, velocity: 0x7f },
     /// });
     /// writer.push(Message::MetaEvent {
-    ///     delta_time: VLQ::new(0),
+    ///     delta_time: 0,
     ///     event: MetaEvent::EndOfTrack,
     ///     data: Vec::new(),
     /// });
-    /// writer.write(PathBuf::from("tests/test.mid"));
+    /// writer.write("tests/test.mid");
     /// ```
-    pub fn write(&self, path: PathBuf) -> Result<(), io::Error> {
+    pub fn write(&self, path: &str) -> Result<(), io::Error> {
+        let path = path::Path::new(path);
         info!("start writing at {:?}", &path);
-        let mut file = BufWriter::new(OpenOptions::new()
+        let mut file = io::BufWriter::new(fs::OpenOptions::new()
             .write(true)
             .truncate(true)
             .create(true)
@@ -260,6 +253,7 @@ impl Writer {
                     ref event,
                     ..
                 } => {
+                    let delta_time = VLQ::new(delta_time);
                     let tmp_status_byte = (*event).status_byte();
                     match pre_status_byte {
                         Some(pre_status_byte) if pre_status_byte == tmp_status_byte => {
