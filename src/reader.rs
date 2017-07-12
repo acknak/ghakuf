@@ -3,13 +3,11 @@ use formats::*;
 use messages::*;
 use std::error;
 use std::fs;
-use std::fs::{File, OpenOptions};
 use std::fmt;
 use std::io;
-use std::io::{BufReader, Read, Seek, SeekFrom};
+use std::io::{Read, Seek, SeekFrom};
 use std::mem::size_of;
 use std::path;
-use std::path::PathBuf;
 
 /// `ghakuf`'s SMF parser.
 ///
@@ -38,9 +36,9 @@ use std::path::PathBuf;
 /// }
 /// ```
 pub struct Reader {
-    file: BufReader<File>,
+    file: io::BufReader<fs::File>,
     handlers: Vec<Box<Handler>>,
-    path: PathBuf,
+    path: path::PathBuf,
 }
 impl Reader {
     /// Builds Reader with handler(observer) and SMF file path.
@@ -68,11 +66,11 @@ impl Reader {
     ///     fn track_change(&mut self) {}
     /// }
     /// ```
-    pub fn new(handler: Box<Handler>, path: PathBuf) -> Result<Reader, ReadError> {
+    pub fn new(handler: Box<Handler>, path: path::PathBuf) -> Result<Reader, ReadError> {
         let mut handlers = Vec::new();
         handlers.push(handler);
         Ok(Reader {
-            file: BufReader::new(OpenOptions::new().read(true).open(&path)?),
+            file: io::BufReader::new(fs::OpenOptions::new().read(true).open(&path)?),
             path: path,
             handlers: handlers,
         })
@@ -142,7 +140,7 @@ impl Reader {
     /// }
     /// ```
     pub fn read(&mut self) -> Result<(), ReadError> {
-        self.file.seek(SeekFrom::Start(0))?;
+        self.file.seek(io::SeekFrom::Start(0))?;
         self.check_tag(Tag::Header)?;
         self.read_header_block()?;
         while self.check_tag(Tag::Track)? {
@@ -335,11 +333,11 @@ pub trait Handler {
 #[derive(Debug)]
 pub enum ReadError {
     /// Reads tag error with invalid tag and file path at header.
-    InvalidHeaderTag { tag: [u8; 4], path: PathBuf },
+    InvalidHeaderTag { tag: [u8; 4], path: path::PathBuf },
     /// Reads SMF identify code ([0x00, 0x00, 0x00, 0x06]) error at header.
-    InvalidIdentifyCode { code: u32, path: PathBuf },
+    InvalidIdentifyCode { code: u32, path: path::PathBuf },
     /// Reads tag error with invalid tag and file path at track.
-    InvalidTrackTag { tag: [u8; 4], path: PathBuf },
+    InvalidTrackTag { tag: [u8; 4], path: path::PathBuf },
     /// Standard file IO error (std::io::Error)
     Io(io::Error),
     /// Reads SMF identify code ([0x00, 0x00, 0x00, 0x06]) error at header.

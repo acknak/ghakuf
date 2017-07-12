@@ -1,10 +1,10 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use formats::*;
 use messages::*;
-use std::fs::OpenOptions;
+use std::fs;
 use std::io;
-use std::io::{BufWriter, Write};
-use std::path::PathBuf;
+use std::io::Write;
+use std::path;
 
 /// `ghakuf`'s SMF builder.
 ///
@@ -225,9 +225,9 @@ impl Writer {
     /// });
     /// writer.write(PathBuf::from("tests/test.mid"));
     /// ```
-    pub fn write(&self, path: PathBuf) -> Result<(), io::Error> {
+    pub fn write(&self, path: path::PathBuf) -> Result<(), io::Error> {
         info!("start writing at {:?}", &path);
-        let mut file = BufWriter::new(OpenOptions::new()
+        let mut file = io::BufWriter::new(fs::OpenOptions::new()
             .write(true)
             .truncate(true)
             .create(true)
