@@ -14,24 +14,29 @@ use std::path;
 /// # Examples
 ///
 /// ```
-/// use ghakuf::formats::*;
 /// use ghakuf::messages::*;
-/// use ghakuf::reader::handler::*;
-/// use ghakuf::reader::reader::*;
-/// use std::path::PathBuf;
+/// use ghakuf::reader::*;
 ///
 /// let mut reader = Reader::new(
 ///     Box::new(HogeHandler {}),
-///     PathBuf::from("tests/test.mid"),
+///     "tests/test.mid",
 /// ).unwrap();
-/// reader.read();
+/// let _ = reader.read();
 ///
 /// struct HogeHandler {}
 /// impl Handler for HogeHandler {
-///     fn header(&mut self, format: Format, track: u16, time_base: u16) {}
-///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {}
-///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {}
-///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {}
+///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
+///       let _ = (format, track, time_base);
+///     }
+///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
+///       let _ = (delta_time, event, data);
+///     }
+///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
+///       let _ = (delta_time, event);
+///     }
+///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
+///       let _ = (delta_time, event, data);
+///     }
 ///     fn track_change(&mut self) {}
 /// }
 /// ```
@@ -46,23 +51,29 @@ impl Reader {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::formats::*;
     /// use ghakuf::messages::*;
-    /// use ghakuf::reader::handler::*;
-    /// use ghakuf::reader::reader::*;
+    /// use ghakuf::reader::*;
     /// use std::path::PathBuf;
     ///
     /// let mut reader = Reader::new(
     ///     Box::new(FugaHandler {}),
-    ///     PathBuf::from("tests/test.mid"),
+    ///     "tests/test.mid",
     /// );
     ///
     /// struct FugaHandler {}
     /// impl Handler for FugaHandler {
-    ///     fn header(&mut self, format: Format, track: u16, time_base: u16) {}
-    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {}
-    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {}
-    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {}
+    ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
+    ///       let _ = (format, track, time_base);
+    ///     }
+    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
+    ///       let _ = (delta_time, event, data);
+    ///     }
+    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
+    ///       let _ = (delta_time, event);
+    ///     }
+    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
+    ///       let _ = (delta_time, event, data);
+    ///     }
     ///     fn track_change(&mut self) {}
     /// }
     /// ```
@@ -80,33 +91,47 @@ impl Reader {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::formats::*;
     /// use ghakuf::messages::*;
-    /// use ghakuf::reader::handler::*;
-    /// use ghakuf::reader::reader::*;
+    /// use ghakuf::reader::*;
     /// use std::path::PathBuf;
     ///
     /// let mut reader = Reader::new(
     ///     Box::new(FugaHandler {}),
-    ///     PathBuf::from("tests/test.mid"),
+    ///     "tests/test.mid",
     /// ).unwrap();
     /// reader.push_hanlder(Box::new(NyanHandler {}));
     ///
     /// struct FugaHandler {}
     /// impl Handler for FugaHandler {
-    ///     fn header(&mut self, format: Format, track: u16, time_base: u16) {}
-    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {}
-    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {}
-    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {}
+    ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
+    ///       let _ = (format, track, time_base);
+    ///     }
+    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
+    ///       let _ = (delta_time, event, data);
+    ///     }
+    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
+    ///       let _ = (delta_time, event);
+    ///     }
+    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
+    ///       let _ = (delta_time, event, data);
+    ///     }
     ///     fn track_change(&mut self) {}
     /// }
     ///
     /// struct NyanHandler {}
     /// impl Handler for NyanHandler {
-    ///     fn header(&mut self, format: Format, track: u16, time_base: u16) {}
-    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {}
-    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {}
-    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {}
+    ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
+    ///       let _ = (format, track, time_base);
+    ///     }
+    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
+    ///       let _ = (delta_time, event, data);
+    ///     }
+    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
+    ///       let _ = (delta_time, event);
+    ///     }
+    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
+    ///       let _ = (delta_time, event, data);
+    ///     }
     ///     fn track_change(&mut self) {}
     /// }
     /// ```
@@ -118,24 +143,29 @@ impl Reader {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::formats::*;
     /// use ghakuf::messages::*;
-    /// use ghakuf::reader::handler::*;
-    /// use ghakuf::reader::reader::*;
-    /// use std::path::PathBuf;
+    /// use ghakuf::reader::*;
     ///
     /// let mut reader = Reader::new(
     ///     Box::new(HogeHandler {}),
-    ///     PathBuf::from("tests/test.mid"),
+    ///     "tests/test.mid",
     /// ).unwrap();
-    /// reader.read();
+    /// let _ = reader.read();
     ///
     /// struct HogeHandler {}
     /// impl Handler for HogeHandler {
-    ///     fn header(&mut self, format: Format, track: u16, time_base: u16) {}
-    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {}
-    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {}
-    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {}
+    ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
+    ///       let _ = (format, track, time_base);
+    ///     }
+    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
+    ///       let _ = (delta_time, event, data);
+    ///     }
+    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
+    ///       let _ = (delta_time, event);
+    ///     }
+    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
+    ///       let _ = (delta_time, event, data);
+    ///     }
     ///     fn track_change(&mut self) {}
     /// }
     /// ```
@@ -293,27 +323,24 @@ impl Reader {
 ///  # Examples
 ///
 ///  ```
-///  use ghakuf::formats::*;
 ///  use ghakuf::messages::*;
-///  use ghakuf::reader::handler::*;
+///  use ghakuf::reader::Handler;
 ///
 ///  struct HogeHandler {}
 ///  impl Handler for HogeHandler {
-///      fn header(&mut self, format: Format, track: u16, time_base: u16) {
-///        // Something
-///      }
-///      fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-///        // you
-///      }
-///      fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-///        // want
-///      }
-///      fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-///        // to
-///      }
-///      fn track_change(&mut self) {
-///        // do
-///      }
+///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
+///       let _ = (format, track, time_base);
+///     }
+///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
+///       let _ = (delta_time, event, data);
+///     }
+///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
+///       let _ = (delta_time, event);
+///     }
+///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
+///       let _ = (delta_time, event, data);
+///     }
+///     fn track_change(&mut self) {}
 ///  }
 ///  ```
 pub trait Handler {

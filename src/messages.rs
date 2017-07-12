@@ -22,7 +22,7 @@ pub trait MessageTool {
     ///
     /// assert_eq!(MetaEvent::Lyric.binary(), [0xff, 0x05]);
     /// assert_eq!(
-    ///     MidiEvent::NoteOff { ch: 0x04, note: 0x02, velocity: 0x00 }.binary(),
+    ///     MidiEvent::NoteOff{ ch: 0x04, note: 0x02, velocity: 0x00 }.binary(),
     ///     [0x84, 0x02, 0x00]
     /// );
     /// assert_eq!(SysExEvent::F7.binary(), [0xf7]);
@@ -60,11 +60,10 @@ pub trait MessageTool {
 ///
 /// ```
 /// use ghakuf::messages::{Message, MetaEvent};
-/// use ghakuf::formats::VLQ;
 ///
 /// let mut messages: Vec<Message> = Vec::new();
 /// messages.push(Message::MetaEvent {
-///     delta_time: VLQ::new(0),
+///     delta_time: 0,
 ///     event: MetaEvent::Lyric,
 ///     data: b"aitakute_aitakute_furufuru".to_vec(),
 /// });
@@ -92,11 +91,10 @@ impl Message {
     ///
     /// ```
     /// use ghakuf::messages::{Message, MidiEvent};
-    /// use ghakuf::formats::VLQ;
     ///
     /// assert_eq!(
     ///     Message::MidiEvent {
-    ///         delta_time: VLQ::new(0),
+    ///         delta_time: 0,
     ///         event: MidiEvent::NoteOn { ch: 0x01, note: 0x3c, velocity: 0x7f }
     ///     }.binary(),
     ///    vec![0x00, 0x91, 0x3c, 0x7f]
@@ -152,11 +150,10 @@ impl Message {
     ///
     /// ```
     /// use ghakuf::messages::{Message, MetaEvent};
-    /// use ghakuf::formats::VLQ;
     ///
     /// assert_eq!(
     ///     Message::MetaEvent {
-    ///         delta_time: VLQ::new(0),
+    ///         delta_time: 0,
     ///         event: MetaEvent::Lyric,
     ///         data: b"aitanakatta_aitanakatta_no!".to_vec(),
     ///     }.len(),
