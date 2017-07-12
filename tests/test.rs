@@ -2,11 +2,9 @@ extern crate byteorder;
 extern crate ghakuf;
 
 use byteorder::{BigEndian, WriteBytesExt};
-use ghakuf::formats::*;
 use ghakuf::messages::*;
-use ghakuf::reader::handler::*;
-use ghakuf::reader::reader::*;
-use ghakuf::writer::writer::*;
+use ghakuf::reader::*;
+use ghakuf::writer::*;
 use std::fs::{OpenOptions, File};
 use std::io::prelude::*;
 use std::io::Read;
@@ -17,7 +15,7 @@ fn parse_integration_testing() {
     make_smf_sample(PathBuf::from("tests/read.mid"));
     let mut reader = Reader::new(
         Box::new(ReaderHandler { messages: test_messages() }),
-        PathBuf::from("tests/read.mid"),
+        "tests/read.mid",
     ).unwrap();
     assert!(reader.read().is_ok());
 }
@@ -25,15 +23,15 @@ struct ReaderHandler {
     messages: Vec<Message>,
 }
 impl Handler for ReaderHandler {
-    fn header(&mut self, format: Format, track: u16, time_base: u16) {
-        assert_eq!(format, Format::F1);
+    fn header(&mut self, format: u16, track: u16, time_base: u16) {
+        assert_eq!(format, 1);
         assert_eq!(track, 2);
         assert_eq!(time_base, 480);
     }
     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
         assert_eq!(
             Message::MetaEvent {
-                delta_time: VLQ::new(delta_time),
+                delta_time,
                 event: event.clone(),
                 data: data.clone(),
             },
@@ -44,7 +42,7 @@ impl Handler for ReaderHandler {
     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
         assert_eq!(
             Message::MidiEvent {
-                delta_time: VLQ::new(delta_time),
+                delta_time,
                 event: event.clone(),
             },
             self.messages[0]
@@ -54,7 +52,7 @@ impl Handler for ReaderHandler {
     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
         assert_eq!(
             Message::SysExEvent {
-                delta_time: VLQ::new(delta_time),
+                delta_time,
                 event: event.clone(),
                 data: data.clone(),
             },
@@ -77,7 +75,7 @@ fn build_integration_testing() {
     for message in test_messages {
         writer.push(message);
     }
-    assert!(writer.write(PathBuf::from("tests/write.mid")).is_ok());
+    assert!(writer.write("tests/write.mid").is_ok());
     let mut data_write = Vec::new();
     let mut f = File::open("tests/write.mid").expect("Unable to open file");
     f.read_to_end(&mut data_write).unwrap();
@@ -126,18 +124,18 @@ fn test_messages() -> Vec<Message> {
     let mut test_messages: Vec<Message> = Vec::new();
     let tempo: u32 = 60 * 1000000 / 102; //bpm:102
     test_messages.push(Message::MetaEvent {
-        delta_time: VLQ::new(0),
+        delta_time: 0,
         event: MetaEvent::SetTempo,
         data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
     });
     test_messages.push(Message::MetaEvent {
-        delta_time: VLQ::new(0),
+        delta_time: 0,
         event: MetaEvent::EndOfTrack,
         data: Vec::new(),
     });
     test_messages.push(Message::TrackChange);
     test_messages.push(Message::MidiEvent {
-        delta_time: VLQ::new(0),
+        delta_time: 0,
         event: MidiEvent::NoteOn {
             ch: 0,
             note: 0x3c,
@@ -145,7 +143,7 @@ fn test_messages() -> Vec<Message> {
         },
     });
     test_messages.push(Message::MidiEvent {
-        delta_time: VLQ::new(48),
+        delta_time: 48,
         event: MidiEvent::NoteOn {
             ch: 0,
             note: 0x3c,
@@ -153,7 +151,7 @@ fn test_messages() -> Vec<Message> {
         },
     });
     test_messages.push(Message::MidiEvent {
-        delta_time: VLQ::new(0),
+        delta_time: 0,
         event: MidiEvent::NoteOn {
             ch: 0,
             note: 0x3e,
@@ -161,7 +159,7 @@ fn test_messages() -> Vec<Message> {
         },
     });
     test_messages.push(Message::MidiEvent {
-        delta_time: VLQ::new(48),
+        delta_time: 48,
         event: MidiEvent::NoteOn {
             ch: 0,
             note: 0x3e,
@@ -169,7 +167,7 @@ fn test_messages() -> Vec<Message> {
         },
     });
     test_messages.push(Message::MidiEvent {
-        delta_time: VLQ::new(0),
+        delta_time: 0,
         event: MidiEvent::NoteOn {
             ch: 0,
             note: 0x40,
@@ -177,7 +175,7 @@ fn test_messages() -> Vec<Message> {
         },
     });
     test_messages.push(Message::MidiEvent {
-        delta_time: VLQ::new(192),
+        delta_time: 192,
         event: MidiEvent::NoteOn {
             ch: 0,
             note: 0x40,
@@ -185,7 +183,7 @@ fn test_messages() -> Vec<Message> {
         },
     });
     test_messages.push(Message::MetaEvent {
-        delta_time: VLQ::new(0),
+        delta_time: 0,
         event: MetaEvent::EndOfTrack,
         data: Vec::new(),
     });
