@@ -157,8 +157,8 @@ impl Writer {
     /// let mut writer: Writer = Writer::new();
     /// writer.format(Format::F0);
     /// ```
-    pub fn format(&mut self, format: Format) -> &mut Writer {
-        self.format = format;
+    pub fn format(&mut self, format: u16) -> &mut Writer {
+        self.format = Format::new(format);
         self
     }
     /// Sets SMF time base value.
@@ -225,7 +225,8 @@ impl Writer {
     /// });
     /// writer.write(PathBuf::from("tests/test.mid"));
     /// ```
-    pub fn write(&self, path: path::PathBuf) -> Result<(), io::Error> {
+    pub fn write(&self, path: &str) -> Result<(), io::Error> {
+        let path = path::Path::new(path);
         info!("start writing at {:?}", &path);
         let mut file = io::BufWriter::new(fs::OpenOptions::new()
             .write(true)
@@ -260,6 +261,7 @@ impl Writer {
                     ref event,
                     ..
                 } => {
+                    let delta_time = VLQ::new(delta_time);
                     let tmp_status_byte = (*event).status_byte();
                     match pre_status_byte {
                         Some(pre_status_byte) if pre_status_byte == tmp_status_byte => {

@@ -66,12 +66,12 @@ impl Reader {
     ///     fn track_change(&mut self) {}
     /// }
     /// ```
-    pub fn new(handler: Box<Handler>, path: path::PathBuf) -> Result<Reader, ReadError> {
-        let mut handlers = Vec::new();
+    pub fn new(handler: Box<Handler>, path: &str) -> Result<Reader, ReadError> {
+        let mut handlers: Vec<Box<Handler>> = Vec::new();
         handlers.push(handler);
         Ok(Reader {
             file: io::BufReader::new(fs::OpenOptions::new().read(true).open(&path)?),
-            path: path,
+            path: path::PathBuf::from(path),
             handlers: handlers,
         })
     }
@@ -180,7 +180,7 @@ impl Reader {
     fn read_header_block(&mut self) -> Result<&mut Reader, ReadError> {
         let file_code = self.file.read_u32::<BigEndian>()?;
         if file_code == 6u32 {
-            let format = Format::new(self.file.read_u16::<BigEndian>()?);
+            let format = self.file.read_u16::<BigEndian>()?;
             let track = self.file.read_u16::<BigEndian>()?;
             let timebase = self.file.read_u16::<BigEndian>()?;
             for handler in &mut self.handlers {
@@ -318,7 +318,7 @@ impl Reader {
 ///  ```
 pub trait Handler {
     /// Fired when SMF header track has found.
-    fn header(&mut self, format: Format, track: u16, time_base: u16);
+    fn header(&mut self, format: u16, track: u16, time_base: u16);
     /// Fired when meta event has found.
     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>);
     /// Fired when MIDI event has found.

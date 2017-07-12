@@ -73,13 +73,13 @@ pub trait MessageTool {
 #[derive(PartialEq, Clone, Debug)]
 pub enum Message {
     MetaEvent {
-        delta_time: VLQ,
+        delta_time: u32,
         event: MetaEvent,
         data: Vec<u8>,
     },
-    MidiEvent { delta_time: VLQ, event: MidiEvent },
+    MidiEvent { delta_time: u32, event: MidiEvent },
     SysExEvent {
-        delta_time: VLQ,
+        delta_time: u32,
         event: SysExEvent,
         data: Vec<u8>,
     },
@@ -111,7 +111,7 @@ impl Message {
                 ref event,
                 ref data,
             } => {
-                binary.append(&mut delta_time.binary());
+                binary.append(&mut VLQ::new(delta_time).binary());
                 binary.append(&mut event.binary());
                 binary.extend_from_slice(&VLQ::new(data.len() as u32).binary());
                 binary.extend_from_slice(&data);
@@ -120,7 +120,7 @@ impl Message {
                 delta_time,
                 ref event,
             } => {
-                binary.append(&mut delta_time.binary());
+                binary.append(&mut VLQ::new(delta_time).binary());
                 binary.append(&mut event.binary());
             }
             SysExEvent {
@@ -128,7 +128,7 @@ impl Message {
                 ref event,
                 ref data,
             } => {
-                binary.append(&mut delta_time.binary());
+                binary.append(&mut VLQ::new(delta_time).binary());
                 binary.append(&mut event.binary());
                 use messages::SysExEvent::*;
                 match *event {
@@ -170,18 +170,18 @@ impl Message {
                 delta_time,
                 ref event,
                 ref data,
-            } => delta_time.len() + event.len() + (VLQ::new(data.len() as u32).len()) + data.len(),
+            } => VLQ::new(delta_time).len() + event.len() + (VLQ::new(data.len() as u32).len()) + data.len(),
             MidiEvent {
                 delta_time,
                 ref event,
-            } => delta_time.len() + event.len(),
+            } => VLQ::new(delta_time).len() + event.len(),
             SysExEvent {
                 delta_time,
                 ref event,
                 ref data,
             } => {
                 use messages::SysExEvent::*;
-                delta_time.len() +
+                VLQ::new(delta_time).len() +
                     VLQ::new(
                         data.len() as u32 +
                             match *event {
