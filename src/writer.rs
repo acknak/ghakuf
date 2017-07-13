@@ -43,7 +43,7 @@ use std::path;
 ///     event: MetaEvent::EndOfTrack,
 ///     data: Vec::new(),
 /// });
-/// writer.write("tests/test.mid");
+/// writer.write("tests/writer_doctest.mid");
 /// ```
 pub struct Writer {
     messages: Vec<Message>,
@@ -215,7 +215,7 @@ impl Writer {
     ///     event: MetaEvent::EndOfTrack,
     ///     data: Vec::new(),
     /// });
-    /// writer.write("tests/test.mid");
+    /// writer.write("tests/writer_write_doctest.mid");
     /// ```
     pub fn write(&self, path: &str) -> Result<(), io::Error> {
         let path = path::Path::new(path);
