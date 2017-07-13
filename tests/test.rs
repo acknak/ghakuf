@@ -12,7 +12,6 @@ use std::path::PathBuf;
 
 #[test]
 fn parse_integration_testing() {
-    make_smf_sample(PathBuf::from("tests/test.mid"));
     let mut reader = Reader::new(
         Box::new(ReaderHandler { messages: test_messages() }),
         "tests/test.mid",
@@ -88,12 +87,13 @@ fn build_integration_testing() {
     assert_eq!(data_read, data_write);
 }
 
-fn make_smf_sample(path: PathBuf) {
+#[allow(dead_code)]
+fn make_smf_sample() {
     let _ = OpenOptions::new()
         .write(true)
         .truncate(true)
         .create(true)
-        .open(path)
+        .open("tests/test.mid")
         .and_then(|mut f| {
             f.write_all(b"MThd")?; //HEADER DATA
             f.write_all(&[0, 0, 0, 6, 0, 1, 0, 2])?;
