@@ -71,7 +71,7 @@
 //!     event: MetaEvent::EndOfTrack,
 //!     data: Vec::new(),
 //! });
-//! writer.write("tests/test.mid");
+//! writer.write("tests/lib_doctest.mid");
 //! ```
 //!
 extern crate byteorder;

@@ -12,10 +12,9 @@ use std::path::PathBuf;
 
 #[test]
 fn parse_integration_testing() {
-    make_smf_sample(PathBuf::from("tests/read.mid"));
     let mut reader = Reader::new(
         Box::new(ReaderHandler { messages: test_messages() }),
-        "tests/read.mid",
+        "tests/test.mid",
     ).unwrap();
     assert!(reader.read().is_ok());
 }
@@ -75,13 +74,12 @@ fn build_integration_testing() {
     for message in test_messages {
         writer.push(message);
     }
-    assert!(writer.write("tests/write.mid").is_ok());
+    assert!(writer.write("tests/test_build.mid").is_ok());
     let mut data_write = Vec::new();
-    let mut f = File::open("tests/write.mid").expect("Unable to open file");
+    let mut f = File::open("tests/test_build.mid").unwrap();
     f.read_to_end(&mut data_write).unwrap();
-    make_smf_sample(PathBuf::from("tests/write_teacher.mid"));
     let mut data_read = Vec::new();
-    let mut f = File::open("tests/write_teacher.mid").expect("Unable to open file");
+    let mut f = File::open("tests/test.mid").unwrap();
     f.read_to_end(&mut data_read).unwrap();
     if data_read.len() == 0 || data_write.len() == 0 {
         assert!(false);
@@ -89,12 +87,13 @@ fn build_integration_testing() {
     assert_eq!(data_read, data_write);
 }
 
-fn make_smf_sample(path: PathBuf) {
+#[allow(dead_code)]
+fn make_smf_sample() {
     let _ = OpenOptions::new()
         .write(true)
         .truncate(true)
         .create(true)
-        .open(path)
+        .open("tests/test.mid")
         .and_then(|mut f| {
             f.write_all(b"MThd")?; //HEADER DATA
             f.write_all(&[0, 0, 0, 6, 0, 1, 0, 2])?;
