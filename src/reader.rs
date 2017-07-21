@@ -128,10 +128,24 @@ impl Reader {
     /// }
     /// ```
     pub fn read(&mut self) -> Result<(), ReadError> {
+        let mut skip = true;
+        for handler in &mut self.handlers {
+            skip &= handler.status() == HandlerStatus::SkipAll;
+            if skip {
+                return Err(ReadError::NoValidHandler);
+            }
+        }
         self.file.seek(io::SeekFrom::Start(0))?;
         self.check_tag(Tag::Header)?;
         self.read_header_block()?;
         while self.check_tag(Tag::Track)? {
+            skip = true;
+            for handler in &mut self.handlers {
+                skip &= handler.status() == HandlerStatus::SkipAll;
+            }
+            if skip {
+                break;
+            };
             self.read_track_block()?;
         }
         Ok(())
@@ -154,7 +168,9 @@ impl Reader {
                 Tag::Header => Ok(true),
                 Tag::Track => {
                     for handler in &mut self.handlers {
-                        handler.track_change();
+                        if handler.status() != HandlerStatus::SkipAll {
+                            handler.track_change();
+                        }
                     }
                     Ok(true)
                 }
@@ -195,6 +211,15 @@ impl Reader {
         let mut data_size = self.file.read_u32::<BigEndian>()?;
         let mut pre_status: u8 = 0;
         while data_size > 0 {
+            let mut skip = true;
+            for handler in &mut self.handlers {
+                skip &= handler.status() != HandlerStatus::Continue;
+            }
+            if skip {
+                self.file.seek(SeekFrom::Current(data_size as i64))?;
+                data_size = 0;
+                continue;
+            }
             let delta_time = self.read_vlq()?;
             data_size -= delta_time.len() as u32;
             let mut status = self.file.read_u8()?;
@@ -219,7 +244,9 @@ impl Reader {
                     let data = self.read_data(&len)?;
                     data_size -= len.len() as u32 + len.val();
                     for handler in &mut self.handlers {
-                        handler.meta_event(delta_time.val(), &meta_event, &data);
+                        if handler.status() == HandlerStatus::Continue {
+                            handler.meta_event(delta_time.val(), &meta_event, &data);
+                        }
                     }
                 }
                 0x80...0xef => {
@@ -232,7 +259,9 @@ impl Reader {
                     }
                     let midi_event = builder.build();
                     for handler in &mut self.handlers {
-                        handler.midi_event(delta_time.val(), &midi_event);
+                        if handler.status() == HandlerStatus::Continue {
+                            handler.midi_event(delta_time.val(), &midi_event);
+                        }
                     }
                     pre_status = status;
                 }
@@ -249,7 +278,9 @@ impl Reader {
                     let data = self.read_data(&len)?;
                     data_size -= len.len() as u32 + len.val();
                     for handler in &mut self.handlers {
-                        handler.sys_ex_event(delta_time.val(), &sys_ex_event, &data);
+                        if handler.status() == HandlerStatus::Continue {
+                            handler.sys_ex_event(delta_time.val(), &sys_ex_event, &data);
+                        }
                     }
                     if status == 0xf0 {
                         pre_status = 0xf0;
@@ -369,6 +400,8 @@ pub enum ReadError {
     InvalidTrackTag { tag: [u8; 4], path: path::PathBuf },
     /// Standard file IO error (std::io::Error)
     Io(io::Error),
+    /// Parser doesn't have any valid handlers.
+    NoValidHandler,
     /// Reads SMF identify code ([0x00, 0x00, 0x00, 0x06]) error at header.
     UnknownMessageStatus { status: u8, path: path::PathBuf },
 }
@@ -401,6 +434,7 @@ impl fmt::Display for ReadError {
                 )
             }
             Io(ref err) => err.fmt(f),
+            NoValidHandler => write!(f, "Parser doesn't have any valid handlers."),
             UnknownMessageStatus { status, ref path } => {
                 write!(
                     f,
@@ -417,14 +451,10 @@ impl error::Error for ReadError {
         use reader::ReadError::*;
         match *self {
             InvalidHeaderTag { .. } => "Invalid header tag has found. This file dosen't follow SMF format.",
-            InvalidIdentifyCode { .. } => {
-                concat!(
-                    "Invalid SMF identify code has found at header.",
-                    "This file dosen't follow SMF format."
-                )
-            }
+            InvalidIdentifyCode { .. } => "Invalid SMF identify code has found at header. This file dosen't follow SMF format.",
             InvalidTrackTag { .. } => "Invalid track tag has found. This file dosen't follow SMF format.",
             ReadError::Io(ref err) => err.description(),
+            NoValidHandler => "Parser doesn't have any valid handlers. Regist vailid handler.",
             UnknownMessageStatus { .. } => "Unknown message status has found. This file dosen't follow SMF format.",
         }
     }
