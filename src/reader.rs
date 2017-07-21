@@ -26,16 +26,16 @@ use std::path;
 /// struct HogeHandler {}
 /// impl Handler for HogeHandler {
 ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-///       let _ = (format, track, time_base);
+///         let _ = (format, track, time_base);
 ///     }
 ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-///       let _ = (delta_time, event, data);
+///         let _ = (delta_time, event, data);
 ///     }
 ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-///       let _ = (delta_time, event);
+///         let _ = (delta_time, event);
 ///     }
 ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-///       let _ = (delta_time, event, data);
+///         let _ = (delta_time, event, data);
 ///     }
 ///     fn track_change(&mut self) {}
 /// }
@@ -61,21 +61,7 @@ impl Reader {
     /// );
     ///
     /// struct FugaHandler {}
-    /// impl Handler for FugaHandler {
-    ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-    ///       let _ = (format, track, time_base);
-    ///     }
-    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-    ///       let _ = (delta_time, event);
-    ///     }
-    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn track_change(&mut self) {}
-    /// }
+    /// impl Handler for FugaHandler {}
     /// ```
     pub fn new(handler: Box<Handler>, path: &str) -> Result<Reader, ReadError> {
         let mut handlers: Vec<Box<Handler>> = Vec::new();
@@ -102,38 +88,10 @@ impl Reader {
     /// reader.push_hanlder(Box::new(NyanHandler {}));
     ///
     /// struct FugaHandler {}
-    /// impl Handler for FugaHandler {
-    ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-    ///       let _ = (format, track, time_base);
-    ///     }
-    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-    ///       let _ = (delta_time, event);
-    ///     }
-    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn track_change(&mut self) {}
-    /// }
+    /// impl Handler for FugaHandler {}
     ///
     /// struct NyanHandler {}
-    /// impl Handler for NyanHandler {
-    ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-    ///       let _ = (format, track, time_base);
-    ///     }
-    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-    ///       let _ = (delta_time, event);
-    ///     }
-    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn track_change(&mut self) {}
-    /// }
+    /// impl Handler for NyanHandler {}
     /// ```
     pub fn push_hanlder(&mut self, handler: Box<Handler>) {
         self.handlers.push(handler);
@@ -155,16 +113,16 @@ impl Reader {
     /// struct HogeHandler {}
     /// impl Handler for HogeHandler {
     ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-    ///       let _ = (format, track, time_base);
+    ///         let _ = (format, track, time_base);
     ///     }
     ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
+    ///         let _ = (delta_time, event, data);
     ///     }
     ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-    ///       let _ = (delta_time, event);
+    ///         let _ = (delta_time, event);
     ///     }
     ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
+    ///         let _ = (delta_time, event, data);
     ///     }
     ///     fn track_change(&mut self) {}
     /// }
@@ -332,36 +290,57 @@ impl Reader {
 ///
 ///  ```
 ///  use ghakuf::messages::*;
-///  use ghakuf::reader::Handler;
+///  use ghakuf::reader::*;
 ///
-///  struct HogeHandler {}
+///  struct HogeHandler {
+///    status: HandlerStatus,
+///  }
+///  impl HogeHandler {
+///     fn new() -> HogeHandler {
+///         HogeHandler{status: HandlerStatus::Continue}
+///     }
+///  }
 ///  impl Handler for HogeHandler {
 ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-///       let _ = (format, track, time_base);
+///         let _ = (format, track, time_base);
 ///     }
 ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-///       let _ = (delta_time, event, data);
+///         let _ = (delta_time, event, data);
 ///     }
 ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-///       let _ = (delta_time, event);
+///         let _ = (delta_time, event);
+///         self.status = HandlerStatus::SkipTrack;
 ///     }
 ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-///       let _ = (delta_time, event, data);
+///         let _ = (delta_time, event, data);
 ///     }
-///     fn track_change(&mut self) {}
+///     fn track_change(&mut self) {
+///         self.status = HandlerStatus::Continue;
+///     }
+///     fn status(&mut self) -> HandlerStatus {
+///         self.status.clone()
+///     }
 ///  }
 ///  ```
 pub trait Handler {
     /// Fired when SMF header track has found.
-    fn header(&mut self, format: u16, track: u16, time_base: u16);
+    fn header(&mut self, format: u16, track: u16, time_base: u16) {
+        let _ = (format, track, time_base);
+    }
     /// Fired when meta event has found.
-    fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>);
+    fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
+        let _ = (delta_time, event, data);
+    }
     /// Fired when MIDI event has found.
-    fn midi_event(&mut self, delta_time: u32, event: &MidiEvent);
+    fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
+        let _ = (delta_time, event);
+    }
     /// Fired when system evclusive event has found.
-    fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>);
+    fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
+        let _ = (delta_time, event, data);
+    }
     /// Fired when track has changed.
-    fn track_change(&mut self);
+    fn track_change(&mut self) {}
     /// send handler status to parser
     fn status(&mut self) -> HandlerStatus {
         HandlerStatus::Continue
