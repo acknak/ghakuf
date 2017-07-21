@@ -367,10 +367,15 @@ pub trait Handler {
         HandlerStatus::Continue
     }
 }
+
+/// An enum represents handler status.
 #[derive(PartialEq, Clone, Debug)]
 pub enum HandlerStatus {
+    /// Continues parsing
     Continue,
+    /// Skips parsing track
     SkipTrack,
+    /// Skips all tracks (parser will never send smf mesages for this status handler)
     SkipAll,
 }
 
