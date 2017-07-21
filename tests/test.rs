@@ -15,6 +15,7 @@ fn parse_integration_testing() {
         Box::new(ReaderHandler { messages: test_messages() }),
         "tests/test.mid",
     ).unwrap();
+    reader.push_hanlder(Box::new(SkipHandler::new(test_messages_skipped())));
     assert!(reader.read().is_ok());
 }
 struct ReaderHandler {
@@ -62,6 +63,66 @@ impl Handler for ReaderHandler {
         if self.messages.len() > 0 && self.messages[0] == Message::TrackChange {
             self.messages.remove(0);
         }
+    }
+}
+struct SkipHandler {
+    messages: Vec<Message>,
+    status: HandlerStatus,
+}
+impl SkipHandler {
+    pub fn new(messages: Vec<Message>) -> SkipHandler {
+        SkipHandler {
+            messages: messages,
+            status: HandlerStatus::Continue,
+        }
+    }
+}
+impl Handler for SkipHandler {
+    fn header(&mut self, format: u16, track: u16, time_base: u16) {
+        assert_eq!(format, 1);
+        assert_eq!(track, 2);
+        assert_eq!(time_base, 480);
+    }
+    fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
+        assert_eq!(
+            Message::MetaEvent {
+                delta_time,
+                event: event.clone(),
+                data: data.clone(),
+            },
+            self.messages[0]
+        );
+        self.messages.remove(0);
+    }
+    fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
+        self.status = HandlerStatus::SkipTrack;
+        assert_eq!(
+            Message::MidiEvent {
+                delta_time,
+                event: event.clone(),
+            },
+            self.messages[0]
+        );
+        self.messages.remove(0);
+    }
+    fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
+        assert_eq!(
+            Message::SysExEvent {
+                delta_time,
+                event: event.clone(),
+                data: data.clone(),
+            },
+            self.messages[0]
+        );
+        self.messages.remove(0);
+    }
+    fn track_change(&mut self) {
+        if self.messages.len() > 0 && self.messages[0] == Message::TrackChange {
+            self.messages.remove(0);
+        }
+    }
+    fn status(&mut self) -> HandlerStatus {
+        self.status.clone()
     }
 }
 
@@ -184,6 +245,31 @@ fn test_messages() -> Vec<Message> {
         delta_time: 0,
         event: MetaEvent::EndOfTrack,
         data: Vec::new(),
+    });
+    test_messages
+}
+
+fn test_messages_skipped() -> Vec<Message> {
+    let mut test_messages: Vec<Message> = Vec::new();
+    let tempo: u32 = 60 * 1000000 / 102; //bpm:102
+    test_messages.push(Message::MetaEvent {
+        delta_time: 0,
+        event: MetaEvent::SetTempo,
+        data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
+    });
+    test_messages.push(Message::MetaEvent {
+        delta_time: 0,
+        event: MetaEvent::EndOfTrack,
+        data: Vec::new(),
+    });
+    test_messages.push(Message::TrackChange);
+    test_messages.push(Message::MidiEvent {
+        delta_time: 0,
+        event: MidiEvent::NoteOn {
+            ch: 0,
+            note: 0x3c,
+            velocity: 0x7f,
+        },
     });
     test_messages
 }
