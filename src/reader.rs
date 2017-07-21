@@ -26,16 +26,16 @@ use std::path;
 /// struct HogeHandler {}
 /// impl Handler for HogeHandler {
 ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-///       let _ = (format, track, time_base);
+///         let _ = (format, track, time_base);
 ///     }
 ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-///       let _ = (delta_time, event, data);
+///         let _ = (delta_time, event, data);
 ///     }
 ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-///       let _ = (delta_time, event);
+///         let _ = (delta_time, event);
 ///     }
 ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-///       let _ = (delta_time, event, data);
+///         let _ = (delta_time, event, data);
 ///     }
 ///     fn track_change(&mut self) {}
 /// }
@@ -61,21 +61,7 @@ impl Reader {
     /// );
     ///
     /// struct FugaHandler {}
-    /// impl Handler for FugaHandler {
-    ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-    ///       let _ = (format, track, time_base);
-    ///     }
-    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-    ///       let _ = (delta_time, event);
-    ///     }
-    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn track_change(&mut self) {}
-    /// }
+    /// impl Handler for FugaHandler {}
     /// ```
     pub fn new(handler: Box<Handler>, path: &str) -> Result<Reader, ReadError> {
         let mut handlers: Vec<Box<Handler>> = Vec::new();
@@ -102,38 +88,10 @@ impl Reader {
     /// reader.push_hanlder(Box::new(NyanHandler {}));
     ///
     /// struct FugaHandler {}
-    /// impl Handler for FugaHandler {
-    ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-    ///       let _ = (format, track, time_base);
-    ///     }
-    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-    ///       let _ = (delta_time, event);
-    ///     }
-    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn track_change(&mut self) {}
-    /// }
+    /// impl Handler for FugaHandler {}
     ///
     /// struct NyanHandler {}
-    /// impl Handler for NyanHandler {
-    ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-    ///       let _ = (format, track, time_base);
-    ///     }
-    ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-    ///       let _ = (delta_time, event);
-    ///     }
-    ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
-    ///     }
-    ///     fn track_change(&mut self) {}
-    /// }
+    /// impl Handler for NyanHandler {}
     /// ```
     pub fn push_hanlder(&mut self, handler: Box<Handler>) {
         self.handlers.push(handler);
@@ -155,56 +113,80 @@ impl Reader {
     /// struct HogeHandler {}
     /// impl Handler for HogeHandler {
     ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-    ///       let _ = (format, track, time_base);
+    ///         let _ = (format, track, time_base);
     ///     }
     ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
+    ///         let _ = (delta_time, event, data);
     ///     }
     ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-    ///       let _ = (delta_time, event);
+    ///         let _ = (delta_time, event);
     ///     }
     ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-    ///       let _ = (delta_time, event, data);
+    ///         let _ = (delta_time, event, data);
     ///     }
     ///     fn track_change(&mut self) {}
     /// }
     /// ```
     pub fn read(&mut self) -> Result<(), ReadError> {
+        let mut skip = true;
+        for handler in &mut self.handlers {
+            skip &= handler.status() == HandlerStatus::SkipAll;
+            if skip {
+                return Err(ReadError::NoValidHandler);
+            }
+        }
         self.file.seek(io::SeekFrom::Start(0))?;
         self.check_tag(Tag::Header)?;
         self.read_header_block()?;
         while self.check_tag(Tag::Track)? {
+            skip = true;
+            for handler in &mut self.handlers {
+                skip &= handler.status() == HandlerStatus::SkipAll;
+            }
+            if skip {
+                break;
+            };
             self.read_track_block()?;
         }
         Ok(())
     }
     fn check_tag(&mut self, tag_type: Tag) -> Result<bool, ReadError> {
         let mut tag = [0u8; 4];
-        let buf_size = self.file.read(&mut tag)?;
-        if tag_type.binary() == &tag || (buf_size == 0 && tag_type == Tag::Track) {
-            if tag_type == Tag::Track {
-                for handler in &mut self.handlers {
-                    handler.track_change();
+        if self.file.read(&mut tag)? < 4 {
+            match tag_type {
+                Tag::Header => {
+                    error!("header tag hasn't found");
+                    Err(ReadError::InvalidHeaderTag {
+                        tag: tag,
+                        path: self.path.clone(),
+                    })
+                }
+                Tag::Track => Ok(false),
+            }
+        } else if tag_type.binary() == &tag {
+            match tag_type {
+                Tag::Header => Ok(true),
+                Tag::Track => {
+                    for handler in &mut self.handlers {
+                        if handler.status() != HandlerStatus::SkipAll {
+                            handler.track_change();
+                        }
+                    }
+                    Ok(true)
                 }
             }
-            Ok(buf_size > 0)
         } else {
             error!("invalid tag has found: {:?}", &tag);
             match tag_type {
-                Tag::Header => {
-                    return Err(ReadError::InvalidHeaderTag {
-                        tag: tag,
-                        path: self.path.clone(),
-                    })
-                }
-                Tag::Track => {
-                    return Err(ReadError::InvalidTrackTag {
-                        tag: tag,
-                        path: self.path.clone(),
-                    })
-                }
+                Tag::Header => Err(ReadError::InvalidHeaderTag {
+                    tag: tag,
+                    path: self.path.clone(),
+                }),
+                Tag::Track => Err(ReadError::InvalidTrackTag {
+                    tag: tag,
+                    path: self.path.clone(),
+                }),
             }
-
         }
     }
     fn read_header_block(&mut self) -> Result<&mut Reader, ReadError> {
@@ -229,6 +211,15 @@ impl Reader {
         let mut data_size = self.file.read_u32::<BigEndian>()?;
         let mut pre_status: u8 = 0;
         while data_size > 0 {
+            let mut skip = true;
+            for handler in &mut self.handlers {
+                skip &= handler.status() != HandlerStatus::Continue;
+            }
+            if skip {
+                self.file.seek(SeekFrom::Current(data_size as i64))?;
+                data_size = 0;
+                continue;
+            }
             let delta_time = self.read_vlq()?;
             data_size -= delta_time.len() as u32;
             let mut status = self.file.read_u8()?;
@@ -253,7 +244,9 @@ impl Reader {
                     let data = self.read_data(&len)?;
                     data_size -= len.len() as u32 + len.val();
                     for handler in &mut self.handlers {
-                        handler.meta_event(delta_time.val(), &meta_event, &data);
+                        if handler.status() == HandlerStatus::Continue {
+                            handler.meta_event(delta_time.val(), &meta_event, &data);
+                        }
                     }
                 }
                 0x80...0xef => {
@@ -266,7 +259,9 @@ impl Reader {
                     }
                     let midi_event = builder.build();
                     for handler in &mut self.handlers {
-                        handler.midi_event(delta_time.val(), &midi_event);
+                        if handler.status() == HandlerStatus::Continue {
+                            handler.midi_event(delta_time.val(), &midi_event);
+                        }
                     }
                     pre_status = status;
                 }
@@ -283,7 +278,9 @@ impl Reader {
                     let data = self.read_data(&len)?;
                     data_size -= len.len() as u32 + len.val();
                     for handler in &mut self.handlers {
-                        handler.sys_ex_event(delta_time.val(), &sys_ex_event, &data);
+                        if handler.status() == HandlerStatus::Continue {
+                            handler.sys_ex_event(delta_time.val(), &sys_ex_event, &data);
+                        }
                     }
                     if status == 0xf0 {
                         pre_status = 0xf0;
@@ -324,36 +321,72 @@ impl Reader {
 ///
 ///  ```
 ///  use ghakuf::messages::*;
-///  use ghakuf::reader::Handler;
+///  use ghakuf::reader::*;
 ///
-///  struct HogeHandler {}
+///  struct HogeHandler {
+///    status: HandlerStatus,
+///  }
+///  impl HogeHandler {
+///     pub fn new() -> HogeHandler {
+///         HogeHandler{status: HandlerStatus::Continue}
+///     }
+///  }
 ///  impl Handler for HogeHandler {
 ///     fn header(&mut self, format: u16, track: u16, time_base: u16) {
-///       let _ = (format, track, time_base);
+///         let _ = (format, track, time_base);
 ///     }
 ///     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
-///       let _ = (delta_time, event, data);
+///         let _ = (delta_time, event, data);
 ///     }
 ///     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
-///       let _ = (delta_time, event);
+///         let _ = (delta_time, event);
+///         self.status = HandlerStatus::SkipTrack;
 ///     }
 ///     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
-///       let _ = (delta_time, event, data);
+///         let _ = (delta_time, event, data);
 ///     }
-///     fn track_change(&mut self) {}
+///     fn track_change(&mut self) {
+///         self.status = HandlerStatus::Continue;
+///     }
+///     fn status(&mut self) -> HandlerStatus {
+///         self.status.clone()
+///     }
 ///  }
 ///  ```
 pub trait Handler {
     /// Fired when SMF header track has found.
-    fn header(&mut self, format: u16, track: u16, time_base: u16);
+    fn header(&mut self, format: u16, track: u16, time_base: u16) {
+        let _ = (format, track, time_base);
+    }
     /// Fired when meta event has found.
-    fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>);
+    fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
+        let _ = (delta_time, event, data);
+    }
     /// Fired when MIDI event has found.
-    fn midi_event(&mut self, delta_time: u32, event: &MidiEvent);
+    fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
+        let _ = (delta_time, event);
+    }
     /// Fired when system evclusive event has found.
-    fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>);
+    fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
+        let _ = (delta_time, event, data);
+    }
     /// Fired when track has changed.
-    fn track_change(&mut self);
+    fn track_change(&mut self) {}
+    /// Send handler status to parser.
+    fn status(&mut self) -> HandlerStatus {
+        HandlerStatus::Continue
+    }
+}
+
+/// An enum represents handler status.
+#[derive(PartialEq, Clone, Debug)]
+pub enum HandlerStatus {
+    /// Continues parsing
+    Continue,
+    /// Skips parsing track
+    SkipTrack,
+    /// Skips all tracks (Parser will never send Messages to this handler any more.)
+    SkipAll,
 }
 
 /// An enum represents errors of SMF parser.
@@ -367,6 +400,8 @@ pub enum ReadError {
     InvalidTrackTag { tag: [u8; 4], path: path::PathBuf },
     /// Standard file IO error (std::io::Error)
     Io(io::Error),
+    /// Parser doesn't have any valid handlers.
+    NoValidHandler,
     /// Reads SMF identify code ([0x00, 0x00, 0x00, 0x06]) error at header.
     UnknownMessageStatus { status: u8, path: path::PathBuf },
 }
@@ -399,6 +434,7 @@ impl fmt::Display for ReadError {
                 )
             }
             Io(ref err) => err.fmt(f),
+            NoValidHandler => write!(f, "Parser doesn't have any valid handlers."),
             UnknownMessageStatus { status, ref path } => {
                 write!(
                     f,
@@ -415,14 +451,10 @@ impl error::Error for ReadError {
         use reader::ReadError::*;
         match *self {
             InvalidHeaderTag { .. } => "Invalid header tag has found. This file dosen't follow SMF format.",
-            InvalidIdentifyCode { .. } => {
-                concat!(
-                    "Invalid SMF identify code has found at header.",
-                    "This file dosen't follow SMF format."
-                )
-            }
+            InvalidIdentifyCode { .. } => "Invalid SMF identify code has found at header. This file dosen't follow SMF format.",
             InvalidTrackTag { .. } => "Invalid track tag has found. This file dosen't follow SMF format.",
             ReadError::Io(ref err) => err.description(),
+            NoValidHandler => "Parser doesn't have any valid handlers. Regist vailid handler.",
             UnknownMessageStatus { .. } => "Unknown message status has found. This file dosen't follow SMF format.",
         }
     }
