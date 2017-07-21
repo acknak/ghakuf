@@ -354,6 +354,16 @@ pub trait Handler {
     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>);
     /// Fired when track has changed.
     fn track_change(&mut self);
+    /// send handler status to parser
+    fn status(&mut self) -> HandlerStatus {
+        HandlerStatus::Continue
+    }
+}
+#[derive(PartialEq, Clone, Debug)]
+pub enum HandlerStatus {
+    Continue,
+    SkipTrack,
+    SkipAll,
 }
 
 /// An enum represents errors of SMF parser.
