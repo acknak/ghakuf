@@ -180,31 +180,39 @@ impl Reader {
     }
     fn check_tag(&mut self, tag_type: Tag) -> Result<bool, ReadError> {
         let mut tag = [0u8; 4];
-        let buf_size = self.file.read(&mut tag)?;
-        if tag_type.binary() == &tag || (buf_size == 0 && tag_type == Tag::Track) {
-            if tag_type == Tag::Track {
-                for handler in &mut self.handlers {
-                    handler.track_change();
+        if self.file.read(&mut tag)? < 4 {
+            match tag_type {
+                Tag::Header => {
+                    error!("header tag hasn't found");
+                    Err(ReadError::InvalidHeaderTag {
+                        tag: tag,
+                        path: self.path.clone(),
+                    })
+                }
+                Tag::Track => Ok(false),
+            }
+        } else if tag_type.binary() == &tag {
+            match tag_type {
+                Tag::Header => Ok(true),
+                Tag::Track => {
+                    for handler in &mut self.handlers {
+                        handler.track_change();
+                    }
+                    Ok(true)
                 }
             }
-            Ok(buf_size > 0)
         } else {
             error!("invalid tag has found: {:?}", &tag);
             match tag_type {
-                Tag::Header => {
-                    return Err(ReadError::InvalidHeaderTag {
-                        tag: tag,
-                        path: self.path.clone(),
-                    })
-                }
-                Tag::Track => {
-                    return Err(ReadError::InvalidTrackTag {
-                        tag: tag,
-                        path: self.path.clone(),
-                    })
-                }
+                Tag::Header => Err(ReadError::InvalidHeaderTag {
+                    tag: tag,
+                    path: self.path.clone(),
+                }),
+                Tag::Track => Err(ReadError::InvalidTrackTag {
+                    tag: tag,
+                    path: self.path.clone(),
+                }),
             }
-
         }
     }
     fn read_header_block(&mut self) -> Result<&mut Reader, ReadError> {
