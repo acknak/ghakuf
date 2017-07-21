@@ -8,7 +8,6 @@ use ghakuf::writer::*;
 use std::fs::{OpenOptions, File};
 use std::io::prelude::*;
 use std::io::Read;
-use std::path::PathBuf;
 
 #[test]
 fn parse_integration_testing() {
