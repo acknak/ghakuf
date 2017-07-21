@@ -327,7 +327,7 @@ impl Reader {
 ///    status: HandlerStatus,
 ///  }
 ///  impl HogeHandler {
-///     fn new() -> HogeHandler {
+///     pub fn new() -> HogeHandler {
 ///         HogeHandler{status: HandlerStatus::Continue}
 ///     }
 ///  }
@@ -372,7 +372,7 @@ pub trait Handler {
     }
     /// Fired when track has changed.
     fn track_change(&mut self) {}
-    /// send handler status to parser
+    /// Send handler status to parser.
     fn status(&mut self) -> HandlerStatus {
         HandlerStatus::Continue
     }
@@ -385,7 +385,7 @@ pub enum HandlerStatus {
     Continue,
     /// Skips parsing track
     SkipTrack,
-    /// Skips all tracks (parser will never send smf mesages for this status handler)
+    /// Skips all tracks (Parser will never send Messages to this handler any more.)
     SkipAll,
 }
 
