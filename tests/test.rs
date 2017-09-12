@@ -15,7 +15,7 @@ fn parse_integration_testing() {
         Box::new(ReaderHandler { messages: test_messages() }),
         "tests/test.mid",
     ).unwrap();
-    reader.push_hanlder(Box::new(SkipHandler::new(test_messages_skipped())));
+    reader.push_handler(Box::new(SkipHandler::new(test_messages_skipped())));
     assert!(reader.read().is_ok());
 }
 struct ReaderHandler {
