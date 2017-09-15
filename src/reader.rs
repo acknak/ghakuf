@@ -85,7 +85,7 @@ impl Reader {
     ///     Box::new(FugaHandler {}),
     ///     "tests/test.mid",
     /// ).unwrap();
-    /// reader.push_hanlder(Box::new(NyanHandler {}));
+    /// reader.push_handler(Box::new(NyanHandler {}));
     ///
     /// struct FugaHandler {}
     /// impl Handler for FugaHandler {}
@@ -93,7 +93,7 @@ impl Reader {
     /// struct NyanHandler {}
     /// impl Handler for NyanHandler {}
     /// ```
-    pub fn push_hanlder(&mut self, handler: Box<Handler>) {
+    pub fn push_handler(&mut self, handler: Box<Handler>) {
         self.handlers.push(handler);
     }
     /// Parses SMF messages and fires(broadcasts) handlers.
@@ -366,7 +366,7 @@ pub trait Handler {
     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
         let _ = (delta_time, event);
     }
-    /// Fired when system evclusive event has found.
+    /// Fired when system exclusive event has found.
     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
         let _ = (delta_time, event, data);
     }
