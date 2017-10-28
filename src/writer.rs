@@ -1,10 +1,8 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use formats::*;
 use messages::*;
-use std::fs;
-use std::io;
+use std::{fs, io, path};
 use std::io::Write;
-use std::path;
 
 /// `ghakuf`'s SMF builder.
 ///

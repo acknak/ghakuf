@@ -1,13 +1,8 @@
 use byteorder::{BigEndian, ReadBytesExt};
 use formats::*;
 use messages::*;
-use std::error;
-use std::fs;
-use std::fmt;
-use std::io;
+use std::{error, fs, fmt, io, mem, path};
 use std::io::{Read, Seek, SeekFrom};
-use std::mem;
-use std::path;
 
 /// `ghakuf`'s SMF parser.
 ///
