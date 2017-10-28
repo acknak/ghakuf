@@ -44,12 +44,16 @@ fn main() {
     writer.write("examples/example.mid").unwrap();
 
     // parse example
-    let mut reader = Reader::new(Box::new(HogeHandler {}), "examples/example.mid").unwrap();
+    let mut read_messages: Vec<Message> = Vec::new();
+    let mut handler = HogeHandler {messages: &mut read_messages};
+    let mut reader = Reader::new(&mut handler, "examples/example.mid").unwrap();
     reader.read().unwrap();
 }
 
-struct HogeHandler {}
-impl Handler for HogeHandler {
+struct HogeHandler<'a> {
+    messages: &'a mut Vec<Message>
+}
+impl<'a> Handler for HogeHandler<'a> {
     fn header(&mut self, format: u16, track: u16, time_base: u16) {
         println!(
             "SMF format: {}, track: {}, time base: {}",
@@ -65,12 +69,25 @@ impl Handler for HogeHandler {
             event,
             data
         );
+        self.messages.push(
+            Message::MetaEvent {
+                delta_time: delta_time,
+                event: event.clone(),
+                data: data.clone(),
+            }
+        );
     }
     fn midi_event(&mut self, delta_time: u32, event: &MidiEvent) {
         println!(
             "delta time: {:>4}, MIDI event: {}",
             delta_time,
             event,
+        );
+        self.messages.push(
+            Message::MidiEvent {
+                delta_time: delta_time,
+                event: event.clone()
+            }
         );
     }
     fn sys_ex_event(&mut self, delta_time: u32, event: &SysExEvent, data: &Vec<u8>) {
@@ -80,8 +97,19 @@ impl Handler for HogeHandler {
             event,
             data
         );
+        self.messages.push(
+            Message::SysExEvent {
+                delta_time: delta_time,
+                event: event.clone(),
+                data: data.clone(),
+            }
+        );
     }
     fn track_change(&mut self) {
-        println!("Track change occcurs!");
+        // Excepts first track change (from format chunk to data chunk) 
+        if self.messages.len() > 0 {
+            println!("Track change occcurs!");
+            self.messages.push(Message::TrackChange)
+        }
     }
 }

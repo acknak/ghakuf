@@ -11,11 +11,10 @@ use std::io::Read;
 
 #[test]
 fn parse_integration_testing() {
-    let mut reader = Reader::new(
-        Box::new(ReaderHandler { messages: test_messages() }),
-        "tests/test.mid",
-    ).unwrap();
-    reader.push_handler(Box::new(SkipHandler::new(test_messages_skipped())));
+    let mut reader_handler = ReaderHandler { messages: test_messages() };
+    let mut skip_handler = SkipHandler {messages: test_messages_skipped(), status: HandlerStatus::Continue};
+    let mut reader = Reader::new(&mut reader_handler, "tests/test.mid").unwrap();
+    reader.push_handler(&mut skip_handler);
     assert!(reader.read().is_ok());
 }
 struct ReaderHandler {
@@ -68,14 +67,6 @@ impl Handler for ReaderHandler {
 struct SkipHandler {
     messages: Vec<Message>,
     status: HandlerStatus,
-}
-impl SkipHandler {
-    pub fn new(messages: Vec<Message>) -> SkipHandler {
-        SkipHandler {
-            messages: messages,
-            status: HandlerStatus::Continue,
-        }
-    }
 }
 impl Handler for SkipHandler {
     fn header(&mut self, format: u16, track: u16, time_base: u16) {

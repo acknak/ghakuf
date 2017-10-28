@@ -17,8 +17,9 @@ use std::path;
 /// use ghakuf::messages::*;
 /// use ghakuf::reader::*;
 ///
+/// let mut handler = HogeHandler {};
 /// let mut reader = Reader::new(
-///     Box::new(HogeHandler {}),
+///     &mut handler,
 ///     "tests/test.mid",
 /// ).unwrap();
 /// let _ = reader.read();
@@ -40,31 +41,30 @@ use std::path;
 ///     fn track_change(&mut self) {}
 /// }
 /// ```
-pub struct Reader {
+pub struct Reader<'a> {
     file: io::BufReader<fs::File>,
-    handlers: Vec<Box<Handler>>,
+    handlers: Vec<&'a mut Handler>,
     path: path::PathBuf,
 }
-impl Reader {
+impl<'a> Reader<'a> {
     /// Builds Reader with handler(observer) and SMF file path.
     ///
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::messages::*;
     /// use ghakuf::reader::*;
-    /// use std::path::PathBuf;
     ///
+    /// let mut handler = FugaHandler {};
     /// let mut reader = Reader::new(
-    ///     Box::new(FugaHandler {}),
-    ///     "tests/test.mid",
+    ///     &mut handler,
+    ///     "tests/test.mid"
     /// );
     ///
     /// struct FugaHandler {}
     /// impl Handler for FugaHandler {}
     /// ```
-    pub fn new(handler: Box<Handler>, path: &str) -> Result<Reader, ReadError> {
-        let mut handlers: Vec<Box<Handler>> = Vec::new();
+    pub fn new(handler: &'a mut Handler, path: &str) -> Result<Reader<'a>, ReadError> {
+        let mut handlers: Vec<&'a mut Handler> = Vec::new();
         handlers.push(handler);
         Ok(Reader {
             file: io::BufReader::new(fs::OpenOptions::new().read(true).open(&path)?),
@@ -77,15 +77,15 @@ impl Reader {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::messages::*;
     /// use ghakuf::reader::*;
-    /// use std::path::PathBuf;
     ///
+    /// let mut fuga_handler = FugaHandler {};
+    /// let mut nyan_handler = NyanHandler {};
     /// let mut reader = Reader::new(
-    ///     Box::new(FugaHandler {}),
+    ///     &mut fuga_handler,
     ///     "tests/test.mid",
     /// ).unwrap();
-    /// reader.push_handler(Box::new(NyanHandler {}));
+    /// reader.push_handler(&mut nyan_handler);
     ///
     /// struct FugaHandler {}
     /// impl Handler for FugaHandler {}
@@ -93,7 +93,7 @@ impl Reader {
     /// struct NyanHandler {}
     /// impl Handler for NyanHandler {}
     /// ```
-    pub fn push_handler(&mut self, handler: Box<Handler>) {
+    pub fn push_handler(&mut self, handler: &'a mut Handler) {
         self.handlers.push(handler);
     }
     /// Parses SMF messages and fires(broadcasts) handlers.
@@ -104,8 +104,9 @@ impl Reader {
     /// use ghakuf::messages::*;
     /// use ghakuf::reader::*;
     ///
+    /// let mut handler = HogeHandler{};
     /// let mut reader = Reader::new(
-    ///     Box::new(HogeHandler {}),
+    ///     &mut handler,
     ///     "tests/test.mid",
     /// ).unwrap();
     /// let _ = reader.read();
@@ -189,7 +190,7 @@ impl Reader {
             }
         }
     }
-    fn read_header_block(&mut self) -> Result<&mut Reader, ReadError> {
+    fn read_header_block(&mut self) -> Result<&mut Reader<'a>, ReadError> {
         let file_code = self.file.read_u32::<BigEndian>()?;
         if file_code == 6u32 {
             let format = self.file.read_u16::<BigEndian>()?;
@@ -207,7 +208,7 @@ impl Reader {
             })
         }
     }
-    fn read_track_block(&mut self) -> Result<&mut Reader, ReadError> {
+    fn read_track_block(&mut self) -> Result<&mut Reader<'a>, ReadError> {
         let mut data_size = self.file.read_u32::<BigEndian>()?;
         let mut pre_status: u8 = 0;
         while data_size > 0 {

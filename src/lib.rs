@@ -12,8 +12,9 @@
 //! use ghakuf::messages::*;
 //! use ghakuf::reader::*;
 //!
+//! let mut handler = HogeHandler {};
 //! let mut reader = Reader::new(
-//!     Box::new(HogeHandler {}),
+//!     &mut handler,
 //!     "tests/test.mid",
 //! ).unwrap();
 //! let _ = reader.read();
