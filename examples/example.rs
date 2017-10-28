@@ -3,6 +3,7 @@ extern crate ghakuf;
 use ghakuf::messages::*;
 use ghakuf::reader::*;
 use ghakuf::writer::*;
+use std::path;
 
 fn main() {
     // sample messages
@@ -45,18 +46,20 @@ fn main() {
 
     // build example
     {
+        let path = path::Path::new("examples/example.mid");
         let mut writer = Writer::new();
         writer.running_status(true);
         for message in &write_messages {
             writer.push(&message);
         }
-        let _ = writer.write("examples/example.mid");
+        let _ = writer.write(&path);
     }
 
     // parse example
     {
+        let path = path::Path::new("examples/example.mid");
         let mut handler = HogeHandler {messages: &mut read_messages};
-        let mut reader = Reader::new(&mut handler, "examples/example.mid").unwrap();
+        let mut reader = Reader::new(&mut handler, &path).unwrap();
         let _ = reader.read();
     }
 

@@ -15,7 +15,9 @@ use std::path;
 /// ```
 /// use ghakuf::messages::*;
 /// use ghakuf::writer::*;
+/// use std::path;
 ///
+/// let path = path::Path::new("tests/writer_doctest.mid");
 /// let tempo: u32 = 60 * 1000000 / 102; //bpm:102
 /// let mut messages: Vec<Message> = vec![
 ///     Message::MetaEvent {
@@ -49,7 +51,7 @@ use std::path;
 /// for message in &messages {
 ///     writer.push(&message);
 /// }
-/// writer.write("tests/writer_doctest.mid");
+/// writer.write(&path);
 /// ```
 pub struct Writer<'a> {
     messages: Vec<&'a Message>,
@@ -203,7 +205,9 @@ impl<'a> Writer<'a> {
     /// ```
     /// use ghakuf::messages::*;
     /// use ghakuf::writer::*;
+    /// use std::path;
     ///
+    /// let path = path::Path::new("tests/writer_write_doctest.mid");
     /// let tempo: u32 = 60 * 1000000 / 102; //bpm:102
     /// let mut messages: Vec<Message> = vec![
     ///     Message::MetaEvent {
@@ -232,11 +236,10 @@ impl<'a> Writer<'a> {
     /// for message in &messages {
     ///     writer.push(&message);
     /// }
-    /// writer.write("tests/writer_write_doctest.mid");
+    /// writer.write(&path);
     /// ```
-    pub fn write(&self, path: &str) -> Result<(), io::Error> {
-        let path = path::Path::new(path);
-        info!("start writing at {:?}", &path);
+    pub fn write(&self, path: &path::Path) -> Result<(), io::Error> {
+        info!("start writing at {:?}", path);
         let mut file = io::BufWriter::new(fs::OpenOptions::new()
             .write(true)
             .truncate(true)

@@ -11,12 +11,11 @@
 //! ```
 //! use ghakuf::messages::*;
 //! use ghakuf::reader::*;
+//! use std::path;
 //!
+//! let path = path::Path::new("tests/test.mid");
 //! let mut handler = HogeHandler {};
-//! let mut reader = Reader::new(
-//!     &mut handler,
-//!     "tests/test.mid",
-//! ).unwrap();
+//! let mut reader = Reader::new(&mut handler, &path).unwrap();
 //! let _ = reader.read();
 //!
 //! struct HogeHandler {}
@@ -44,7 +43,9 @@
 //! ```
 //! use ghakuf::messages::*;
 //! use ghakuf::writer::*;
+//! use std::path;
 //!
+//! let path = path::Path::new("tests/lib_doctest.mid");
 //! let tempo: u32 = 60 * 1000000 / 102; //bpm:102
 //! let messages: Vec<Message> = vec![
 //!     Message::MetaEvent {
@@ -78,7 +79,7 @@
 //! for message in &messages {
 //!     writer.push(message);
 //! }
-//! writer.write("tests/lib_doctest.mid");
+//! writer.write(&path);
 //! ```
 //!
 extern crate byteorder;
