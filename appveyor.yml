@@ -8,25 +8,25 @@ environment:
   RUST_INSTALL_DIR: C:\Rust
   matrix:
     - RUST_INSTALL_TRIPLE: i686-pc-windows-msvc
-      RUST_VERSION: 1.20.0
+      RUST_VERSION: 1.21.0
     - RUST_INSTALL_TRIPLE: i686-pc-windows-msvc
       RUST_VERSION: beta
     - RUST_INSTALL_TRIPLE: i686-pc-windows-msvc
       RUST_VERSION: nightly
     - RUST_INSTALL_TRIPLE: x86_64-pc-windows-msvc
-      RUST_VERSION: 1.20.0
+      RUST_VERSION: 1.21.0
     - RUST_INSTALL_TRIPLE: x86_64-pc-windows-msvc
       RUST_VERSION: beta
     - RUST_INSTALL_TRIPLE: x86_64-pc-windows-msvc
       RUST_VERSION: nightly
     - RUST_INSTALL_TRIPLE: i686-pc-windows-gnu
-      RUST_VERSION: 1.20.0
+      RUST_VERSION: 1.21.0
     - RUST_INSTALL_TRIPLE: i686-pc-windows-gnu
       RUST_VERSION: beta
     - RUST_INSTALL_TRIPLE: i686-pc-windows-gnu
       RUST_VERSION: nightly
     - RUST_INSTALL_TRIPLE: x86_64-pc-windows-gnu
-      RUST_VERSION: 1.20.0
+      RUST_VERSION: 1.21.0
     - RUST_INSTALL_TRIPLE: x86_64-pc-windows-gnu
       RUST_VERSION: beta
     - RUST_INSTALL_TRIPLE: x86_64-pc-windows-gnu
