@@ -11,11 +11,11 @@
 //! ```
 //! use ghakuf::messages::*;
 //! use ghakuf::reader::*;
+//! use std::path;
 //!
-//! let mut reader = Reader::new(
-//!     Box::new(HogeHandler {}),
-//!     "tests/test.mid",
-//! ).unwrap();
+//! let path = path::Path::new("tests/test.mid");
+//! let mut handler = HogeHandler {};
+//! let mut reader = Reader::new(&mut handler, &path).unwrap();
 //! let _ = reader.read();
 //!
 //! struct HogeHandler {}
@@ -43,35 +43,43 @@
 //! ```
 //! use ghakuf::messages::*;
 //! use ghakuf::writer::*;
+//! use std::path;
 //!
+//! let path = path::Path::new("tests/lib_doctest.mid");
+//! let tempo: u32 = 60 * 1000000 / 102; //bpm:102
+//! let messages: Vec<Message> = vec![
+//!     Message::MetaEvent {
+//!         delta_time: 0,
+//!         event: MetaEvent::SetTempo,
+//!         data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
+//!     },
+//!     Message::MetaEvent {
+//!         delta_time: 0,
+//!         event: MetaEvent::EndOfTrack,
+//!         data: Vec::new(),
+//!     },
+//!     Message::TrackChange,
+//!     Message::MidiEvent {
+//!         delta_time: 0,
+//!         event: MidiEvent::NoteOn { ch: 0, note: 0x3c, velocity: 0x7f },
+//!     },
+//!     Message::MidiEvent {
+//!         delta_time: 192,
+//!         event: MidiEvent::NoteOn { ch: 0, note: 0x40, velocity: 0 },
+//!     },
+//!     Message::MetaEvent {
+//!         delta_time: 0,
+//!         event: MetaEvent::EndOfTrack,
+//!         data: Vec::new(),
+//!     }
+//! ];
+//! 
 //! let mut writer = Writer::new();
 //! writer.running_status(true);
-//! let tempo: u32 = 60 * 1000000 / 102; //bpm:102
-//! writer.push(Message::MetaEvent {
-//!     delta_time: 0,
-//!     event: MetaEvent::SetTempo,
-//!     data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
-//! });
-//! writer.push(Message::MetaEvent {
-//!     delta_time: 0,
-//!     event: MetaEvent::EndOfTrack,
-//!     data: Vec::new(),
-//! });
-//! writer.push(Message::TrackChange);
-//! writer.push(Message::MidiEvent {
-//!     delta_time: 0,
-//!     event: MidiEvent::NoteOn { ch: 0, note: 0x3c, velocity: 0x7f },
-//! });
-//! writer.push(Message::MidiEvent {
-//!     delta_time: 192,
-//!     event: MidiEvent::NoteOn { ch: 0, note: 0x40, velocity: 0 },
-//! });
-//! writer.push(Message::MetaEvent {
-//!     delta_time: 0,
-//!     event: MetaEvent::EndOfTrack,
-//!     data: Vec::new(),
-//! });
-//! writer.write("tests/lib_doctest.mid");
+//! for message in &messages {
+//!     writer.push(message);
+//! }
+//! writer.write(&path);
 //! ```
 //!
 extern crate byteorder;

@@ -6,7 +6,7 @@ use std::fs;
 use std::fmt;
 use std::io;
 use std::io::{Read, Seek, SeekFrom};
-use std::mem::size_of;
+use std::mem;
 use std::path;
 
 /// `ghakuf`'s SMF parser.
@@ -16,11 +16,11 @@ use std::path;
 /// ```
 /// use ghakuf::messages::*;
 /// use ghakuf::reader::*;
+/// use std::path;
 ///
-/// let mut reader = Reader::new(
-///     Box::new(HogeHandler {}),
-///     "tests/test.mid",
-/// ).unwrap();
+/// let path = path::Path::new("tests/test.mid");
+/// let mut handler = HogeHandler {};
+/// let mut reader = Reader::new(&mut handler, &path).unwrap();
 /// let _ = reader.read();
 ///
 /// struct HogeHandler {}
@@ -40,35 +40,33 @@ use std::path;
 ///     fn track_change(&mut self) {}
 /// }
 /// ```
-pub struct Reader {
+pub struct Reader<'a> {
     file: io::BufReader<fs::File>,
-    handlers: Vec<Box<Handler>>,
-    path: path::PathBuf,
+    handlers: Vec<&'a mut Handler>,
+    path: &'a path::Path,
 }
-impl Reader {
+impl<'a> Reader<'a> {
     /// Builds Reader with handler(observer) and SMF file path.
     ///
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::messages::*;
     /// use ghakuf::reader::*;
-    /// use std::path::PathBuf;
+    /// use std::path;
     ///
-    /// let mut reader = Reader::new(
-    ///     Box::new(FugaHandler {}),
-    ///     "tests/test.mid",
-    /// );
+    /// let path = path::Path::new("tests/test.mid");
+    /// let mut handler = FugaHandler {};
+    /// let mut reader = Reader::new(&mut handler, &path);
     ///
     /// struct FugaHandler {}
     /// impl Handler for FugaHandler {}
     /// ```
-    pub fn new(handler: Box<Handler>, path: &str) -> Result<Reader, ReadError> {
-        let mut handlers: Vec<Box<Handler>> = Vec::new();
+    pub fn new(handler: &'a mut Handler, path: &'a path::Path) -> Result<Reader<'a>, ReadError<'a>> {
+        let mut handlers: Vec<&'a mut Handler> = Vec::new();
         handlers.push(handler);
         Ok(Reader {
-            file: io::BufReader::new(fs::OpenOptions::new().read(true).open(&path)?),
-            path: path::PathBuf::from(path),
+            file: io::BufReader::new(fs::OpenOptions::new().read(true).open(path)?),
+            path: path,
             handlers: handlers,
         })
     }
@@ -77,15 +75,14 @@ impl Reader {
     /// # Examples
     ///
     /// ```
-    /// use ghakuf::messages::*;
     /// use ghakuf::reader::*;
-    /// use std::path::PathBuf;
+    /// use std::path;
     ///
-    /// let mut reader = Reader::new(
-    ///     Box::new(FugaHandler {}),
-    ///     "tests/test.mid",
-    /// ).unwrap();
-    /// reader.push_handler(Box::new(NyanHandler {}));
+    /// let path = path::Path::new("tests/test.mid");
+    /// let mut fuga_handler = FugaHandler {};
+    /// let mut nyan_handler = NyanHandler {};
+    /// let mut reader = Reader::new(&mut fuga_handler, &path).unwrap();
+    /// reader.push_handler(&mut nyan_handler);
     ///
     /// struct FugaHandler {}
     /// impl Handler for FugaHandler {}
@@ -93,7 +90,7 @@ impl Reader {
     /// struct NyanHandler {}
     /// impl Handler for NyanHandler {}
     /// ```
-    pub fn push_handler(&mut self, handler: Box<Handler>) {
+    pub fn push_handler(&mut self, handler: &'a mut Handler) {
         self.handlers.push(handler);
     }
     /// Parses SMF messages and fires(broadcasts) handlers.
@@ -103,11 +100,11 @@ impl Reader {
     /// ```
     /// use ghakuf::messages::*;
     /// use ghakuf::reader::*;
+    /// use std::path;
     ///
-    /// let mut reader = Reader::new(
-    ///     Box::new(HogeHandler {}),
-    ///     "tests/test.mid",
-    /// ).unwrap();
+    /// let path = path::Path::new("tests/test.mid");
+    /// let mut handler = HogeHandler{};
+    /// let mut reader = Reader::new(&mut handler, &path).unwrap();
     /// let _ = reader.read();
     ///
     /// struct HogeHandler {}
@@ -150,7 +147,7 @@ impl Reader {
         }
         Ok(())
     }
-    fn check_tag(&mut self, tag_type: Tag) -> Result<bool, ReadError> {
+    fn check_tag(&mut self, tag_type: Tag) -> Result<bool, ReadError<'a>> {
         let mut tag = [0u8; 4];
         if self.file.read(&mut tag)? < 4 {
             match tag_type {
@@ -158,7 +155,7 @@ impl Reader {
                     error!("header tag hasn't found");
                     Err(ReadError::InvalidHeaderTag {
                         tag: tag,
-                        path: self.path.clone(),
+                        path: self.path,
                     })
                 }
                 Tag::Track => Ok(false),
@@ -180,16 +177,16 @@ impl Reader {
             match tag_type {
                 Tag::Header => Err(ReadError::InvalidHeaderTag {
                     tag: tag,
-                    path: self.path.clone(),
+                    path: self.path,
                 }),
                 Tag::Track => Err(ReadError::InvalidTrackTag {
                     tag: tag,
-                    path: self.path.clone(),
+                    path: self.path,
                 }),
             }
         }
     }
-    fn read_header_block(&mut self) -> Result<&mut Reader, ReadError> {
+    fn read_header_block(&mut self) -> Result<&mut Reader<'a>, ReadError<'a>> {
         let file_code = self.file.read_u32::<BigEndian>()?;
         if file_code == 6u32 {
             let format = self.file.read_u16::<BigEndian>()?;
@@ -203,11 +200,11 @@ impl Reader {
             error!("invalid smf identify code has found at header");
             Err(ReadError::InvalidIdentifyCode {
                 code: file_code,
-                path: self.path.clone(),
+                path: self.path,
             })
         }
     }
-    fn read_track_block(&mut self) -> Result<&mut Reader, ReadError> {
+    fn read_track_block(&mut self) -> Result<&mut Reader<'a>, ReadError<'a>> {
         let mut data_size = self.file.read_u32::<BigEndian>()?;
         let mut pre_status: u8 = 0;
         while data_size > 0 {
@@ -232,14 +229,14 @@ impl Reader {
                 status = pre_status;
                 self.file.seek(SeekFrom::Current(-1))?;
             } else {
-                data_size -= size_of::<u8>() as u32;
+                data_size -= mem::size_of::<u8>() as u32;
             }
             match status {
                 0xff => {
                     // meta event
                     info!("meta event status has found!");
                     let meta_event = MetaEvent::new(self.file.read_u8()?);
-                    data_size -= size_of::<u8>() as u32;
+                    data_size -= mem::size_of::<u8>() as u32;
                     let len = self.read_vlq()?;
                     let data = self.read_data(&len)?;
                     data_size -= len.len() as u32 + len.val();
@@ -255,7 +252,7 @@ impl Reader {
                     let mut builder = MidiEventBuilder::new(status);
                     while builder.shortage() > 0 {
                         builder.push(self.file.read_u8()?);
-                        data_size -= size_of::<u8>() as u32;
+                        data_size -= mem::size_of::<u8>() as u32;
                     }
                     let midi_event = builder.build();
                     for handler in &mut self.handlers {
@@ -270,7 +267,7 @@ impl Reader {
                     info!("system exclusice event status has found!");
                     if status == 0xf7 && pre_status == 0xf0 {
                         pre_status = 0;
-                        data_size -= size_of::<u8>() as u32;
+                        data_size -= mem::size_of::<u8>() as u32;
                         continue;
                     }
                     let sys_ex_event = SysExEvent::new(status);
@@ -290,21 +287,21 @@ impl Reader {
                     error!("unknown status has found: {}", status);
                     return Err(ReadError::UnknownMessageStatus {
                         status: status,
-                        path: self.path.clone(),
+                        path: self.path,
                     });
                 }
             };
         }
         Ok(self)
     }
-    fn read_vlq(&mut self) -> Result<VLQ, ReadError> {
+    fn read_vlq(&mut self) -> Result<VLQ, ReadError<'a>> {
         let mut vlq_builder = VLQBuilder::new();
         while !vlq_builder.closed() {
             vlq_builder.push(self.file.read_u8()?);
         }
         Ok(vlq_builder.build())
     }
-    fn read_data(&mut self, vlq: &VLQ) -> Result<Vec<u8>, ReadError> {
+    fn read_data(&mut self, vlq: &VLQ) -> Result<Vec<u8>, ReadError<'a>> {
         let len = vlq.val();
         let mut data: Vec<u8> = Vec::new();
         data.reserve(len as usize);
@@ -391,21 +388,21 @@ pub enum HandlerStatus {
 
 /// An enum represents errors of SMF parser.
 #[derive(Debug)]
-pub enum ReadError {
+pub enum ReadError<'a> {
     /// Reads tag error with invalid tag and file path at header.
-    InvalidHeaderTag { tag: [u8; 4], path: path::PathBuf },
+    InvalidHeaderTag { tag: [u8; 4], path: &'a path::Path },
     /// Reads SMF identify code ([0x00, 0x00, 0x00, 0x06]) error at header.
-    InvalidIdentifyCode { code: u32, path: path::PathBuf },
+    InvalidIdentifyCode { code: u32, path: &'a path::Path },
     /// Reads tag error with invalid tag and file path at track.
-    InvalidTrackTag { tag: [u8; 4], path: path::PathBuf },
+    InvalidTrackTag { tag: [u8; 4], path: &'a path::Path },
     /// Standard file IO error (std::io::Error)
     Io(io::Error),
     /// Parser doesn't have any valid handlers.
     NoValidHandler,
     /// Reads SMF identify code ([0x00, 0x00, 0x00, 0x06]) error at header.
-    UnknownMessageStatus { status: u8, path: path::PathBuf },
+    UnknownMessageStatus { status: u8, path: &'a path::Path },
 }
-impl fmt::Display for ReadError {
+impl<'a> fmt::Display for ReadError<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use reader::ReadError::*;
         match *self {
@@ -446,7 +443,7 @@ impl fmt::Display for ReadError {
         }
     }
 }
-impl error::Error for ReadError {
+impl<'a> error::Error for ReadError<'a> {
     fn description(&self) -> &str {
         use reader::ReadError::*;
         match *self {
@@ -459,8 +456,8 @@ impl error::Error for ReadError {
         }
     }
 }
-impl From<io::Error> for ReadError {
-    fn from(err: io::Error) -> ReadError {
+impl<'a> From<io::Error> for ReadError<'a> {
+    fn from(err: io::Error) -> ReadError<'a> {
         ReadError::Io(err)
     }
 }

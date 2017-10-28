@@ -8,14 +8,15 @@ use ghakuf::writer::*;
 use std::fs::{OpenOptions, File};
 use std::io::prelude::*;
 use std::io::Read;
+use std::path;
 
 #[test]
 fn parse_integration_testing() {
-    let mut reader = Reader::new(
-        Box::new(ReaderHandler { messages: test_messages() }),
-        "tests/test.mid",
-    ).unwrap();
-    reader.push_handler(Box::new(SkipHandler::new(test_messages_skipped())));
+    let path = path::Path::new("tests/test.mid");
+    let mut reader_handler = ReaderHandler { messages: test_messages() };
+    let mut skip_handler = SkipHandler {messages: test_messages_skipped(), status: HandlerStatus::Continue};
+    let mut reader = Reader::new(&mut reader_handler, &path).unwrap();
+    reader.push_handler(&mut skip_handler);
     assert!(reader.read().is_ok());
 }
 struct ReaderHandler {
@@ -69,14 +70,6 @@ struct SkipHandler {
     messages: Vec<Message>,
     status: HandlerStatus,
 }
-impl SkipHandler {
-    pub fn new(messages: Vec<Message>) -> SkipHandler {
-        SkipHandler {
-            messages: messages,
-            status: HandlerStatus::Continue,
-        }
-    }
-}
 impl Handler for SkipHandler {
     fn header(&mut self, format: u16, track: u16, time_base: u16) {
         assert_eq!(format, 1);
@@ -128,15 +121,16 @@ impl Handler for SkipHandler {
 
 #[test]
 fn build_integration_testing() {
+    let build_path = path::Path::new("tests/test_build.mid");
+    let test_messages = test_messages();
     let mut writer = Writer::new();
     writer.running_status(true);
-    let test_messages = test_messages();
-    for message in test_messages {
-        writer.push(message);
+    for message in &test_messages {
+        writer.push(&message);
     }
-    assert!(writer.write("tests/test_build.mid").is_ok());
+    assert!(writer.write(&build_path).is_ok());
     let mut data_write = Vec::new();
-    let mut f = File::open("tests/test_build.mid").unwrap();
+    let mut f = File::open(&build_path).unwrap();
     f.read_to_end(&mut data_write).unwrap();
     let mut data_read = Vec::new();
     let mut f = File::open("tests/test.mid").unwrap();
