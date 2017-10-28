@@ -119,11 +119,11 @@ impl Handler for SkipHandler {
 
 #[test]
 fn build_integration_testing() {
+    let test_messages = test_messages();
     let mut writer = Writer::new();
     writer.running_status(true);
-    let test_messages = test_messages();
-    for message in test_messages {
-        writer.push(message);
+    for message in &test_messages {
+        writer.push(&message);
     }
     assert!(writer.write("tests/test_build.mid").is_ok());
     let mut data_write = Vec::new();

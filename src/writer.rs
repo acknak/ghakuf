@@ -16,47 +16,53 @@ use std::path;
 /// use ghakuf::messages::*;
 /// use ghakuf::writer::*;
 ///
+/// let tempo: u32 = 60 * 1000000 / 102; //bpm:102
+/// let mut messages: Vec<Message> = vec![
+///     Message::MetaEvent {
+///         delta_time: 0,
+///         event: MetaEvent::SetTempo,
+///         data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
+///     },
+///     Message::MetaEvent {
+///         delta_time: 0,
+///         event: MetaEvent::EndOfTrack,
+///         data: Vec::new(),
+///     },
+///     Message::TrackChange,
+///     Message::MidiEvent {
+///         delta_time: 0,
+///         event: MidiEvent::NoteOn { ch: 0, note: 0x3c, velocity: 0x7f },
+///     },
+///     Message::MidiEvent {
+///         delta_time: 192,
+///         event: MidiEvent::NoteOn { ch: 0, note: 0x40, velocity: 0 },
+///     },
+///     Message::MetaEvent {
+///         delta_time: 0,
+///         event: MetaEvent::EndOfTrack,
+///         data: Vec::new(),
+///     }
+/// ];
+/// 
 /// let mut writer = Writer::new();
 /// writer.running_status(true);
-/// let tempo: u32 = 60 * 1000000 / 102; //bpm:102
-/// writer.push(Message::MetaEvent {
-///     delta_time: 0,
-///     event: MetaEvent::SetTempo,
-///     data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
-/// });
-/// writer.push(Message::MetaEvent {
-///     delta_time: 0,
-///     event: MetaEvent::EndOfTrack,
-///     data: Vec::new(),
-/// });
-/// writer.push(Message::TrackChange);
-/// writer.push(Message::MidiEvent {
-///     delta_time: 0,
-///     event: MidiEvent::NoteOn { ch: 0, note: 0x3c, velocity: 0x7f },
-/// });
-/// writer.push(Message::MidiEvent {
-///     delta_time: 192,
-///     event: MidiEvent::NoteOn { ch: 0, note: 0x40, velocity: 0 },
-/// });
-/// writer.push(Message::MetaEvent {
-///     delta_time: 0,
-///     event: MetaEvent::EndOfTrack,
-///     data: Vec::new(),
-/// });
+/// for message in &messages {
+///     writer.push(&message);
+/// }
 /// writer.write("tests/writer_doctest.mid");
 /// ```
-pub struct Writer {
-    messages: Vec<Message>,
+pub struct Writer<'a> {
+    messages: Vec<&'a Message>,
     format: Format,
     time_base: u16,
     running_status: bool,
 }
-impl Writer {
+impl<'a> Writer<'a> {
     /// Builds Writer with initial value.
     ///
     /// | Writer's member | type | initial value |
     /// |:---|:---|:---|
-    /// | messages | Vec\<ghakuf::messages::Message\> | Vec::new() |
+    /// | messages | Vec\<&'a ghakuf::messages::Message\> | Vec::new() |
     /// | format | ghakuf::formats::Format | ghakuf::formats::Format::F1 |
     /// | time_base | u16 | 480 |
     /// | running_status | bool | false |
@@ -68,7 +74,7 @@ impl Writer {
     ///
     /// let writer: Writer = Writer::new();
     /// ```
-    pub fn new() -> Writer {
+    pub fn new() -> Writer<'a> {
         Writer {
             messages: Vec::new(),
             format: Format::F1,
@@ -84,11 +90,12 @@ impl Writer {
     /// use ghakuf::messages::Message;
     /// use ghakuf::writer::Writer;
     ///
+    /// let message = Message::TrackChange;
     /// let mut writer: Writer = Writer::new();
-    /// writer.push(Message::TrackChange);
-    /// assert_eq!(*writer.messages(), vec![Message::TrackChange]);
+    /// writer.push(&message);
+    /// assert_eq!(*writer.messages(), vec![&message]);
     /// ```
-    pub fn messages(&self) -> &Vec<Message> {
+    pub fn messages(&self) -> &Vec<&'a Message> {
         &self.messages
     }
     /// Pushes message to writer.
@@ -99,13 +106,14 @@ impl Writer {
     /// use ghakuf::messages::{Message, MidiEvent};
     /// use ghakuf::writer::Writer;
     ///
-    /// let mut writer: Writer = Writer::new();
-    /// writer.push(Message::MidiEvent {
+    /// let message = Message::MidiEvent {
     ///     delta_time: 0,
     ///     event: MidiEvent::NoteOn { ch: 0, note: 0x40, velocity: 0 },
-    /// });
+    /// };
+    /// let mut writer: Writer = Writer::new();
+    /// writer.push(&message);
     /// ```
-    pub fn push(&mut self, message: Message) {
+    pub fn push(&mut self, message: &'a Message) {
         self.messages.push(message);
     }
     /// Removes message from writer.
@@ -116,30 +124,34 @@ impl Writer {
     /// use ghakuf::messages::{Message, MetaEvent, MidiEvent};
     /// use ghakuf::writer::Writer;
     ///
+    /// let mut messages_a: Vec<Message> = vec![
+    ///     Message::MidiEvent {
+    ///         delta_time: 0,
+    ///         event: MidiEvent::NoteOn { ch: 0, note: 0x40, velocity: 0 },
+    ///     },
+    ///     Message::TrackChange,
+    ///     Message::MetaEvent {
+    ///         delta_time: 0,
+    ///         event: MetaEvent::EndOfTrack,
+    ///         data: Vec::new(),
+    ///     }
+    /// ];
     /// let mut writer: Writer = Writer::new();
-    /// writer.push(Message::TrackChange);
-    /// writer.push(Message::MidiEvent {
+    /// for message in &messages_a {
+    ///     writer.push(&message);
+    /// }
+    /// writer.remove(1);
+    /// assert_eq!(*writer.messages()[0], Message::MidiEvent {
     ///     delta_time: 0,
     ///     event: MidiEvent::NoteOn { ch: 0, note: 0x40, velocity: 0 },
     /// });
-    /// writer.push(Message::MetaEvent {
+    /// assert_eq!(*writer.messages()[1], Message::MetaEvent {
     ///     delta_time: 0,
     ///     event: MetaEvent::EndOfTrack,
     ///     data: Vec::new(),
     /// });
-    /// writer.remove(1);
-    /// assert_eq!(*writer.messages(),
-    ///     vec![
-    ///         Message::TrackChange,
-    ///         Message::MetaEvent {
-    ///             delta_time: 0,
-    ///             event: MetaEvent::EndOfTrack,
-    ///             data: Vec::new(),
-    ///         }
-    ///     ]
-    /// );
     /// ```
-    pub fn remove(&mut self, index: usize) -> Message {
+    pub fn remove(&mut self, index: usize) -> &'a Message {
         self.messages.remove(index)
     }
     /// Sets SMF format value (Format 0, Format 1 or Format 2) by formats::Format::*.
@@ -152,7 +164,7 @@ impl Writer {
     /// let mut writer: Writer = Writer::new();
     /// writer.format(0);
     /// ```
-    pub fn format(&mut self, format: u16) -> &mut Writer {
+    pub fn format(&mut self, format: u16) -> &mut Writer<'a> {
         self.format = Format::new(format);
         self
     }
@@ -166,7 +178,7 @@ impl Writer {
     /// let mut writer: Writer = Writer::new();
     /// writer.time_base(960);
     /// ```
-    pub fn time_base(&mut self, time_base: u16) -> &mut Writer {
+    pub fn time_base(&mut self, time_base: u16) -> &mut Writer<'a> {
         self.time_base = time_base;
         self
     }
@@ -180,7 +192,7 @@ impl Writer {
     /// let mut writer: Writer = Writer::new();
     /// writer.running_status(true);
     /// ```
-    pub fn running_status(&mut self, running_status: bool) -> &mut Writer {
+    pub fn running_status(&mut self, running_status: bool) -> &mut Writer<'a> {
         self.running_status = running_status;
         self
     }
@@ -191,30 +203,35 @@ impl Writer {
     /// ```
     /// use ghakuf::messages::*;
     /// use ghakuf::writer::*;
-    /// use std::path::PathBuf;
     ///
-    /// let mut writer = Writer::new();
     /// let tempo: u32 = 60 * 1000000 / 102; //bpm:102
-    /// writer.push(Message::MetaEvent {
-    ///     delta_time: 0,
-    ///     event: MetaEvent::SetTempo,
-    ///     data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
-    /// });
-    /// writer.push(Message::MetaEvent {
-    ///     delta_time: 0,
-    ///     event: MetaEvent::EndOfTrack,
-    ///     data: Vec::new(),
-    /// });
-    /// writer.push(Message::TrackChange);
-    /// writer.push(Message::MidiEvent {
-    ///     delta_time: 0,
-    ///     event: MidiEvent::NoteOn { ch: 0, note: 0x3c, velocity: 0x7f },
-    /// });
-    /// writer.push(Message::MetaEvent {
-    ///     delta_time: 0,
-    ///     event: MetaEvent::EndOfTrack,
-    ///     data: Vec::new(),
-    /// });
+    /// let mut messages: Vec<Message> = vec![
+    ///     Message::MetaEvent {
+    ///         delta_time: 0,
+    ///         event: MetaEvent::SetTempo,
+    ///         data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
+    ///     },
+    ///     Message::MetaEvent {
+    ///         delta_time: 0,
+    ///         event: MetaEvent::EndOfTrack,
+    ///         data: Vec::new(),
+    ///     },
+    ///     Message::TrackChange,
+    ///     Message::MidiEvent {
+    ///         delta_time: 0,
+    ///         event: MidiEvent::NoteOn { ch: 0, note: 0x3c, velocity: 0x7f },
+    ///     },
+    ///     Message::MetaEvent {
+    ///         delta_time: 0,
+    ///         event: MetaEvent::EndOfTrack,
+    ///         data: Vec::new(),
+    ///     }
+    /// ];
+    /// 
+    /// let mut writer = Writer::new();
+    /// for message in &messages {
+    ///     writer.push(&message);
+    /// }
     /// writer.write("tests/writer_write_doctest.mid");
     /// ```
     pub fn write(&self, path: &str) -> Result<(), io::Error> {
@@ -231,15 +248,15 @@ impl Writer {
         file.write_u16::<BigEndian>(self.track_number())?;
         file.write_u16::<BigEndian>(self.time_base)?;
         let mut track_len_filo = self.track_len_filo();
-        if self.messages.len() > 0 && self.messages[0] != Message::TrackChange {
+        if self.messages.len() > 0 && *self.messages[0] != Message::TrackChange {
             file.write(&Message::TrackChange.binary())?;
             file.write_u32::<BigEndian>(
                 track_len_filo.pop().unwrap() as u32,
             )?;
         }
         let mut pre_status_byte: Option<u8> = None;
-        for message in self.messages.iter() {
-            match *message {
+        for message in &self.messages {
+            match **message {
                 Message::TrackChange => {
                     file.write(&Message::TrackChange.binary())?;
                     file.write_u32::<BigEndian>(
@@ -283,8 +300,8 @@ impl Writer {
         // First In Last Out
         let mut tracks_len: Vec<usize> = vec![0];
         let mut pre_status_byte: Option<u8> = None;
-        for message in self.messages.iter() {
-            match *message {
+        for message in &self.messages {
+            match **message {
                 Message::TrackChange => {
                     tracks_len.insert(0, 0);
                     pre_status_byte = None;
@@ -311,13 +328,9 @@ impl Writer {
         tracks_len
     }
     fn track_number(&self) -> u16 {
-        let mut number = if self.messages.len() > 0 && self.messages[0] != Message::TrackChange {
-            1
-        } else {
-            0
-        };
-        for message in self.messages.iter() {
-            number += match *message {
+        let mut number = if self.messages.len()>0 && *self.messages[0]!=Message::TrackChange { 1 } else { 0 };
+        for message in &self.messages {
+            number += match **message {
                 Message::TrackChange => 1,
                 _ => 0,
             };

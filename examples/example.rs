@@ -5,49 +5,65 @@ use ghakuf::reader::*;
 use ghakuf::writer::*;
 
 fn main() {
-    // build example
-    let mut writer = Writer::new();
-    writer.running_status(true);
+    // sample messages
     let tempo: u32 = 60 * 1000000 / 102; //bpm:102
-    writer.push(Message::MetaEvent {
-        delta_time: 0,
-        event: MetaEvent::SetTempo,
-        data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
-    });
-    writer.push(Message::MetaEvent {
-        delta_time: 0,
-        event: MetaEvent::EndOfTrack,
-        data: Vec::new(),
-    });
-    writer.push(Message::TrackChange);
-    writer.push(Message::MidiEvent {
-        delta_time: 0,
-        event: MidiEvent::NoteOn {
-            ch: 0,
-            note: 0x3c,
-            velocity: 0x7f,
+    let write_messages: Vec<Message> = vec![
+        Message::MetaEvent {
+            delta_time: 0,
+            event: MetaEvent::SetTempo,
+            data: [(tempo >> 16) as u8, (tempo >> 8) as u8, tempo as u8].to_vec(),
         },
-    });
-    writer.push(Message::MidiEvent {
-        delta_time: 192,
-        event: MidiEvent::NoteOn {
-            ch: 0,
-            note: 0x40,
-            velocity: 0,
+        Message::MetaEvent {
+            delta_time: 0,
+            event: MetaEvent::EndOfTrack,
+            data: Vec::new(),
         },
-    });
-    writer.push(Message::MetaEvent {
-        delta_time: 0,
-        event: MetaEvent::EndOfTrack,
-        data: Vec::new(),
-    });
-    writer.write("examples/example.mid").unwrap();
+        Message::TrackChange,
+        Message::MidiEvent {
+            delta_time: 0,
+            event: MidiEvent::NoteOn {
+                ch: 0,
+                note: 0x3c,
+                velocity: 0x7f,
+            },
+        },
+        Message::MidiEvent {
+            delta_time: 192,
+            event: MidiEvent::NoteOn {
+                ch: 0,
+                note: 0x40,
+                velocity: 0,
+            },
+        },
+        Message::MetaEvent {
+            delta_time: 0,
+            event: MetaEvent::EndOfTrack,
+            data: Vec::new(),
+        }
+    ];
+    let mut read_messages: Vec<Message> = Vec::new();
+
+    // build example
+    {
+        let mut writer = Writer::new();
+        writer.running_status(true);
+        for message in &write_messages {
+            writer.push(&message);
+        }
+        let _ = writer.write("examples/example.mid");
+    }
 
     // parse example
-    let mut read_messages: Vec<Message> = Vec::new();
-    let mut handler = HogeHandler {messages: &mut read_messages};
-    let mut reader = Reader::new(&mut handler, "examples/example.mid").unwrap();
-    reader.read().unwrap();
+    {
+        let mut handler = HogeHandler {messages: &mut read_messages};
+        let mut reader = Reader::new(&mut handler, "examples/example.mid").unwrap();
+        let _ = reader.read();
+    }
+
+    // result check
+    if write_messages == read_messages {
+        println!("Correct I/O has done!");
+    }
 }
 
 struct HogeHandler<'a> {
