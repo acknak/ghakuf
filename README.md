@@ -30,7 +30,7 @@ let _ = reader.read();
 
 struct HogeHandler {}
 impl Handler for HogeHandler {
-    fn header(&mut self, format: Format, track: u16, time_base: u16) {
+    fn header(&mut self, format: u16, track: u16, time_base: u16) {
       // Something
     }
     fn meta_event(&mut self, delta_time: u32, event: &MetaEvent, data: &Vec<u8>) {
@@ -98,7 +98,7 @@ writer.running_status(true);
 for message in &write_messages {
     writer.push(&message);
 }
-writer.write(&path);
+let _ = writer.write(&path);
 ```
 
 ## Supported SMF Event
