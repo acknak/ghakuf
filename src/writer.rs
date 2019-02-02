@@ -1,8 +1,8 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use formats::*;
 use messages::*;
-use std::{fs, io, path};
 use std::io::Write;
+use std::{fs, io, path};
 
 /// `ghakuf`'s SMF builder.
 ///
@@ -43,7 +43,7 @@ use std::io::Write;
 ///         data: Vec::new(),
 ///     }
 /// ];
-/// 
+///
 /// let mut writer = Writer::new();
 /// writer.running_status(true);
 /// for message in &messages {
@@ -75,12 +75,7 @@ impl<'a> Writer<'a> {
     /// let writer: Writer = Writer::new();
     /// ```
     pub fn new() -> Writer<'a> {
-        Writer {
-            messages: Vec::new(),
-            format: Format::F1,
-            time_base: 480,
-            running_status: false,
-        }
+        Writer { messages: Vec::new(), format: Format::F1, time_base: 480, running_status: false }
     }
     /// Returns keeping messages by borrowing.
     ///
@@ -229,7 +224,7 @@ impl<'a> Writer<'a> {
     ///         data: Vec::new(),
     ///     }
     /// ];
-    /// 
+    ///
     /// let mut writer = Writer::new();
     /// for message in &messages {
     ///     writer.push(&message);
@@ -238,11 +233,7 @@ impl<'a> Writer<'a> {
     /// ```
     pub fn write(&self, path: &path::Path) -> Result<(), io::Error> {
         info!("start writing at {:?}", path);
-        let mut file = io::BufWriter::new(fs::OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .create(true)
-            .open(path)?);
+        let mut file = io::BufWriter::new(fs::OpenOptions::new().write(true).truncate(true).create(true).open(path)?);
         file.write(Tag::Header.binary())?;
         file.write(&[0, 0, 0, 6])?;
         file.write(&self.format.binary())?;
@@ -251,26 +242,18 @@ impl<'a> Writer<'a> {
         let mut track_len_filo = self.track_len_filo();
         if self.messages.len() > 0 && *self.messages[0] != Message::TrackChange {
             file.write(&Message::TrackChange.binary())?;
-            file.write_u32::<BigEndian>(
-                track_len_filo.pop().unwrap() as u32,
-            )?;
+            file.write_u32::<BigEndian>(track_len_filo.pop().unwrap() as u32)?;
         }
         let mut pre_status_byte: Option<u8> = None;
         for message in &self.messages {
             match **message {
                 Message::TrackChange => {
                     file.write(&Message::TrackChange.binary())?;
-                    file.write_u32::<BigEndian>(
-                        track_len_filo.pop().unwrap() as u32,
-                    )?;
+                    file.write_u32::<BigEndian>(track_len_filo.pop().unwrap() as u32)?;
                     pre_status_byte = None;
                     info!("wrote track change");
                 }
-                Message::MidiEvent {
-                    delta_time,
-                    ref event,
-                    ..
-                } => {
+                Message::MidiEvent { delta_time, ref event, .. } => {
                     let delta_time = VLQ::new(delta_time);
                     let tmp_status_byte = (*event).status_byte();
                     match pre_status_byte {
@@ -329,7 +312,7 @@ impl<'a> Writer<'a> {
         tracks_len
     }
     fn track_number(&self) -> u16 {
-        let mut number = if self.messages.len()>0 && *self.messages[0]!=Message::TrackChange { 1 } else { 0 };
+        let mut number = if self.messages.len() > 0 && *self.messages[0] != Message::TrackChange { 1 } else { 0 };
         for message in &self.messages {
             number += match **message {
                 Message::TrackChange => 1,

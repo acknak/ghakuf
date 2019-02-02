@@ -71,17 +71,9 @@ pub trait MessageTool {
 /// ```
 #[derive(PartialEq, Clone, Debug)]
 pub enum Message {
-    MetaEvent {
-        delta_time: u32,
-        event: MetaEvent,
-        data: Vec<u8>,
-    },
+    MetaEvent { delta_time: u32, event: MetaEvent, data: Vec<u8> },
     MidiEvent { delta_time: u32, event: MidiEvent },
-    SysExEvent {
-        delta_time: u32,
-        event: SysExEvent,
-        data: Vec<u8>,
-    },
+    SysExEvent { delta_time: u32, event: SysExEvent, data: Vec<u8> },
     TrackChange,
 }
 impl Message {
@@ -104,28 +96,17 @@ impl Message {
         let mut binary: Vec<u8> = Vec::new();
         use messages::Message::*;
         match *self {
-            MetaEvent {
-                delta_time,
-                ref event,
-                ref data,
-            } => {
+            MetaEvent { delta_time, ref event, ref data } => {
                 binary.append(&mut VLQ::new(delta_time).binary());
                 binary.append(&mut event.binary());
                 binary.extend_from_slice(&VLQ::new(data.len() as u32).binary());
                 binary.extend_from_slice(&data);
             }
-            MidiEvent {
-                delta_time,
-                ref event,
-            } => {
+            MidiEvent { delta_time, ref event } => {
                 binary.append(&mut VLQ::new(delta_time).binary());
                 binary.append(&mut event.binary());
             }
-            SysExEvent {
-                delta_time,
-                ref event,
-                ref data,
-            } => {
+            SysExEvent { delta_time, ref event, ref data } => {
                 binary.append(&mut VLQ::new(delta_time).binary());
                 binary.append(&mut event.binary());
                 use messages::SysExEvent::*;
@@ -163,29 +144,20 @@ impl Message {
     pub fn len(&self) -> usize {
         use messages::Message::*;
         match *self {
-            MetaEvent {
-                delta_time,
-                ref event,
-                ref data,
-            } => VLQ::new(delta_time).len() + event.len() + (VLQ::new(data.len() as u32).len()) + data.len(),
-            MidiEvent {
-                delta_time,
-                ref event,
-            } => VLQ::new(delta_time).len() + event.len(),
-            SysExEvent {
-                delta_time,
-                ref event,
-                ref data,
-            } => {
+            MetaEvent { delta_time, ref event, ref data } => VLQ::new(delta_time).len() + event.len() + (VLQ::new(data.len() as u32).len()) + data.len(),
+            MidiEvent { delta_time, ref event } => VLQ::new(delta_time).len() + event.len(),
+            SysExEvent { delta_time, ref event, ref data } => {
                 use messages::SysExEvent::*;
-                VLQ::new(delta_time).len() +
-                    VLQ::new(
-                        data.len() as u32 +
-                            match *event {
+                VLQ::new(delta_time).len()
+                    + VLQ::new(
+                        data.len() as u32
+                            + match *event {
                                 F0 => 1,
                                 _ => 0,
                             },
-                    ).len() + data.len()
+                    )
+                    .len()
+                    + data.len()
             }
             TrackChange => Tag::Track.binary().len(),
         }
@@ -195,49 +167,10 @@ impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use messages::Message::*;
         match *self {
-            MetaEvent {
-                delta_time,
-                ref event,
-                ref data,
-            } => {
-                write!(
-                    f,
-                    "(delta time: {:>4}, Meta Event: {}, data: {:?})",
-                    delta_time,
-                    event,
-                    data
-                )
-            }
-            MidiEvent {
-                delta_time,
-                ref event,
-            } => {
-                write!(
-                    f,
-                    "(delta time: {:>4}, MIDI Event: {})",
-                    delta_time,
-                    event,
-                )
-            }
-            SysExEvent {
-                delta_time,
-                ref event,
-                ref data,
-            } => {
-                write!(
-                    f,
-                    "(delta time: {:>4}, System Exclusive Event: {}, data: {:?})",
-                    delta_time,
-                    event,
-                    data
-                )
-            }
-            TrackChange => {
-                write!(
-                    f,
-                    "Track Change",
-                )
-            }
+            MetaEvent { delta_time, ref event, ref data } => write!(f, "(delta time: {:>4}, Meta Event: {}, data: {:?})", delta_time, event, data),
+            MidiEvent { delta_time, ref event } => write!(f, "(delta time: {:>4}, MIDI Event: {})", delta_time, event,),
+            SysExEvent { delta_time, ref event, ref data } => write!(f, "(delta time: {:>4}, System Exclusive Event: {}, data: {:?})", delta_time, event, data),
+            TrackChange => write!(f, "Track Change",),
         }
     }
 }
@@ -481,53 +414,16 @@ impl MidiEventBuilder {
     /// ```
     pub fn build(&self) -> MidiEvent {
         match self.status & 0xf0 {
-            0x80 => {
-                MidiEvent::NoteOff {
-                    ch: self.status & 0x0f,
-                    note: self.data[0],
-                    velocity: self.data[1],
-                }
-            }
-            0x90 => {
-                MidiEvent::NoteOn {
-                    ch: self.status & 0x0f,
-                    note: self.data[0],
-                    velocity: self.data[1],
-                }
-            }
-            0xa0 => {
-                MidiEvent::PolyphonicKeyPressure {
-                    ch: self.status & 0x0f,
-                    note: self.data[0],
-                    velocity: self.data[1],
-                }
-            }
-            0xb0 => {
-                MidiEvent::ControlChange {
-                    ch: self.status & 0x0f,
-                    control: self.data[0],
-                    data: self.data[1],
-                }
-            }
-            0xc0 => {
-                MidiEvent::ProgramChange {
-                    ch: self.status & 0x0f,
-                    program: self.data[0],
-                }
-            }
-            0xd0 => {
-                MidiEvent::ChannelPressure {
-                    ch: self.status & 0x0f,
-                    pressure: self.data[0],
-                }
-            }
+            0x80 => MidiEvent::NoteOff { ch: self.status & 0x0f, note: self.data[0], velocity: self.data[1] },
+            0x90 => MidiEvent::NoteOn { ch: self.status & 0x0f, note: self.data[0], velocity: self.data[1] },
+            0xa0 => MidiEvent::PolyphonicKeyPressure { ch: self.status & 0x0f, note: self.data[0], velocity: self.data[1] },
+            0xb0 => MidiEvent::ControlChange { ch: self.status & 0x0f, control: self.data[0], data: self.data[1] },
+            0xc0 => MidiEvent::ProgramChange { ch: self.status & 0x0f, program: self.data[0] },
+            0xd0 => MidiEvent::ChannelPressure { ch: self.status & 0x0f, pressure: self.data[0] },
             0xe0 => {
                 let lsb = self.data[0] as u16;
                 let msb = (self.data[1] as u16) << 8;
-                MidiEvent::PitchBendChange {
-                    ch: self.status & 0x0f,
-                    data: (msb & lsb) as i16 - 8192,
-                }
+                MidiEvent::PitchBendChange { ch: self.status & 0x0f, data: (msb & lsb) as i16 - 8192 }
             }
             _ => MidiEvent::Unknown { ch: self.status & 0x0f },
         }
@@ -545,11 +441,7 @@ impl MessageTool for MidiEvent {
             ChannelPressure { pressure, .. } => vec![self.status_byte(), pressure],
             MidiEvent::PitchBendChange { data, .. } => {
                 let pitch_bend: u16 = (data + 8192) as u16;
-                vec![
-                    self.status_byte(),
-                    (pitch_bend >> 7) as u8,
-                    (pitch_bend & 0b1111111) as u8,
-                ]
+                vec![self.status_byte(), (pitch_bend >> 7) as u8, (pitch_bend & 0b1111111) as u8]
             }
             MidiEvent::Unknown { .. } => vec![self.status_byte()],
         }
@@ -557,13 +449,8 @@ impl MessageTool for MidiEvent {
     fn len(&self) -> usize {
         use messages::MidiEvent::*;
         match *self {
-            NoteOff { .. } |
-            NoteOn { .. } |
-            PolyphonicKeyPressure { .. } |
-            ControlChange { .. } |
-            PitchBendChange { .. } => 3,
-            ProgramChange { .. } |
-            ChannelPressure { .. } => 2,
+            NoteOff { .. } | NoteOn { .. } | PolyphonicKeyPressure { .. } | ControlChange { .. } | PitchBendChange { .. } => 3,
+            ProgramChange { .. } | ChannelPressure { .. } => 2,
             Unknown { .. } => 1,
         }
     }
@@ -585,42 +472,10 @@ impl fmt::Display for MidiEvent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use messages::MidiEvent::*;
         match *self {
-            NoteOff { ch, note, velocity } => {
-                write!(
-                    f,
-                    "(NoteOff{{ch: {}, note: {}, velocity: {}}})",
-                    ch,
-                    note,
-                    velocity
-                )
-            }
-            NoteOn { ch, note, velocity } => {
-                write!(
-                    f,
-                    "(NoteOn{{ch: {}, note: {}, velocity: {}}})",
-                    ch,
-                    note,
-                    velocity
-                )
-            }
-            PolyphonicKeyPressure { ch, note, velocity } => {
-                write!(
-                    f,
-                    "(PolyphonicKeyPressure{{ch: {}, note: {}, velocity: {}}})",
-                    ch,
-                    note,
-                    velocity
-                )
-            }
-            ControlChange { ch, control, data } => {
-                write!(
-                    f,
-                    "(ControlChange{{ch: {}, control: {}, data: {}}})",
-                    ch,
-                    control,
-                    data
-                )
-            }
+            NoteOff { ch, note, velocity } => write!(f, "(NoteOff{{ch: {}, note: {}, velocity: {}}})", ch, note, velocity),
+            NoteOn { ch, note, velocity } => write!(f, "(NoteOn{{ch: {}, note: {}, velocity: {}}})", ch, note, velocity),
+            PolyphonicKeyPressure { ch, note, velocity } => write!(f, "(PolyphonicKeyPressure{{ch: {}, note: {}, velocity: {}}})", ch, note, velocity),
+            ControlChange { ch, control, data } => write!(f, "(ControlChange{{ch: {}, control: {}, data: {}}})", ch, control, data),
             ProgramChange { ch, program } => write!(f, "(ProgramChange{{ch: {}, program: {}}})", ch, program),
             ChannelPressure { ch, pressure } => write!(f, "(ChannelPressure{{ch: {}, pressure: {}}})", ch, pressure),
             PitchBendChange { ch, data } => write!(f, "(PitchBendChange{{ch: {}, data: {}}})", ch, data),

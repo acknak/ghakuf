@@ -73,7 +73,7 @@
 //!         data: Vec::new(),
 //!     }
 //! ];
-//! 
+//!
 //! let mut writer = Writer::new();
 //! writer.running_status(true);
 //! for message in &messages {

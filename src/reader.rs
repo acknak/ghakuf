@@ -1,8 +1,8 @@
 use byteorder::{BigEndian, ReadBytesExt};
 use formats::*;
 use messages::*;
-use std::{error, fs, fmt, io, mem, path};
 use std::io::{Read, Seek, SeekFrom};
+use std::{error, fmt, fs, io, mem, path};
 
 /// `ghakuf`'s SMF parser.
 ///
@@ -59,11 +59,7 @@ impl<'a> Reader<'a> {
     pub fn new(handler: &'a mut Handler, path: &'a path::Path) -> Result<Reader<'a>, ReadError<'a>> {
         let mut handlers: Vec<&'a mut Handler> = Vec::new();
         handlers.push(handler);
-        Ok(Reader {
-            file: io::BufReader::new(fs::OpenOptions::new().read(true).open(path)?),
-            path: path,
-            handlers: handlers,
-        })
+        Ok(Reader { file: io::BufReader::new(fs::OpenOptions::new().read(true).open(path)?), path: path, handlers: handlers })
     }
     /// Pushes Handler to Reader.
     ///
@@ -148,10 +144,7 @@ impl<'a> Reader<'a> {
             match tag_type {
                 Tag::Header => {
                     error!("header tag hasn't found");
-                    Err(ReadError::InvalidHeaderTag {
-                        tag: tag,
-                        path: self.path,
-                    })
+                    Err(ReadError::InvalidHeaderTag { tag: tag, path: self.path })
                 }
                 Tag::Track => Ok(false),
             }
@@ -170,14 +163,8 @@ impl<'a> Reader<'a> {
         } else {
             error!("invalid tag has found: {:?}", &tag);
             match tag_type {
-                Tag::Header => Err(ReadError::InvalidHeaderTag {
-                    tag: tag,
-                    path: self.path,
-                }),
-                Tag::Track => Err(ReadError::InvalidTrackTag {
-                    tag: tag,
-                    path: self.path,
-                }),
+                Tag::Header => Err(ReadError::InvalidHeaderTag { tag: tag, path: self.path }),
+                Tag::Track => Err(ReadError::InvalidTrackTag { tag: tag, path: self.path }),
             }
         }
     }
@@ -193,10 +180,7 @@ impl<'a> Reader<'a> {
             Ok(self)
         } else {
             error!("invalid smf identify code has found at header");
-            Err(ReadError::InvalidIdentifyCode {
-                code: file_code,
-                path: self.path,
-            })
+            Err(ReadError::InvalidIdentifyCode { code: file_code, path: self.path })
         }
     }
     fn read_track_block(&mut self) -> Result<&mut Reader<'a>, ReadError<'a>> {
@@ -216,11 +200,7 @@ impl<'a> Reader<'a> {
             data_size -= delta_time.len() as u32;
             let mut status = self.file.read_u8()?;
             if status < 0b10000000 {
-                info!(
-                    "running status has found! recorded data: {}, corrected data: {}",
-                    status,
-                    pre_status
-                );
+                info!("running status has found! recorded data: {}, corrected data: {}", status, pre_status);
                 status = pre_status;
                 self.file.seek(SeekFrom::Current(-1))?;
             } else {
@@ -280,10 +260,7 @@ impl<'a> Reader<'a> {
                 }
                 _ => {
                     error!("unknown status has found: {}", status);
-                    return Err(ReadError::UnknownMessageStatus {
-                        status: status,
-                        path: self.path,
-                    });
+                    return Err(ReadError::UnknownMessageStatus { status: status, path: self.path });
                 }
             };
         }
@@ -401,40 +378,12 @@ impl<'a> fmt::Display for ReadError<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use reader::ReadError::*;
         match *self {
-            InvalidHeaderTag { tag, ref path } => {
-                write!(
-                    f,
-                    "Invalid header tag '{:?}' has found: {}",
-                    tag,
-                    fs::canonicalize(&path).unwrap().display()
-                )
-            }
-            InvalidIdentifyCode { code, ref path } => {
-                write!(
-                    f,
-                    "Invalid identify code '{}' has found at header: {}",
-                    code,
-                    fs::canonicalize(&path).unwrap().display()
-                )
-            }
-            InvalidTrackTag { tag, ref path } => {
-                write!(
-                    f,
-                    "Invalid track tag '{:?}' has found: {}",
-                    tag,
-                    fs::canonicalize(&path).unwrap().display()
-                )
-            }
+            InvalidHeaderTag { tag, ref path } => write!(f, "Invalid header tag '{:?}' has found: {}", tag, fs::canonicalize(&path).unwrap().display()),
+            InvalidIdentifyCode { code, ref path } => write!(f, "Invalid identify code '{}' has found at header: {}", code, fs::canonicalize(&path).unwrap().display()),
+            InvalidTrackTag { tag, ref path } => write!(f, "Invalid track tag '{:?}' has found: {}", tag, fs::canonicalize(&path).unwrap().display()),
             Io(ref err) => err.fmt(f),
             NoValidHandler => write!(f, "Parser doesn't have any valid handlers."),
-            UnknownMessageStatus { status, ref path } => {
-                write!(
-                    f,
-                    "Unknown message status '{:x}' has found: {}",
-                    status,
-                    fs::canonicalize(&path).unwrap().display()
-                )
-            }
+            UnknownMessageStatus { status, ref path } => write!(f, "Unknown message status '{:x}' has found: {}", status, fs::canonicalize(&path).unwrap().display()),
         }
     }
 }
