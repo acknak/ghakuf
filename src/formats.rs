@@ -223,7 +223,13 @@ impl VLQ {
 }
 impl fmt::Debug for VLQ {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "VLQ val: {}, binary: {:?}, len: {}}}", self.val, self.binary(), self.len())
+        write!(
+            f,
+            "VLQ val: {}, binary: {:?}, len: {}}}",
+            self.val,
+            self.binary(),
+            self.len()
+        )
     }
 }
 impl fmt::Display for VLQ {
@@ -250,14 +256,24 @@ mod vlq_tests {
     }
     #[test]
     fn binary_98327() {
-        let tester = VLQBuilder::new().push(134).push(0b10000000).push(23).build();
+        let tester = VLQBuilder::new()
+            .push(134)
+            .push(0b10000000)
+            .push(23)
+            .build();
         assert_eq!(tester.val(), 98327);
         assert_eq!(tester.len(), 3);
         assert_eq!(tester.binary(), [134, 0b10000000, 23]);
     }
     #[test]
     fn binary_ffffffff7f() {
-        let tester = VLQBuilder::new().push(0xff).push(0xff).push(0xff).push(0xff).push(0xff).build();
+        let tester = VLQBuilder::new()
+            .push(0xff)
+            .push(0xff)
+            .push(0xff)
+            .push(0xff)
+            .push(0xff)
+            .build();
         assert!(tester.val() < 0b10000000_0000000_0000000_0000000);
         assert_eq!(tester.len(), 4);
         assert_eq!(tester.binary(), [0xff, 0xff, 0xff, 0x7f]);
@@ -291,7 +307,10 @@ impl VLQBuilder {
     /// let vlq_builder: VLQBuilder = VLQBuilder::new();
     /// ```
     pub fn new() -> VLQBuilder {
-        VLQBuilder { val: 0, closed: false }
+        VLQBuilder {
+            val: 0,
+            closed: false,
+        }
     }
     /// Pushes u8 value for VLQ to VLQBuilder.
     ///
@@ -311,7 +330,8 @@ impl VLQBuilder {
         } else {
             self.val = self.val << 7 | ((data & 0b0111_1111) as u32);
         }
-        if data & 0b00000000_00000000_00000000_10000000 == 0 || self.val > 0b1111111_1111111_1111111 {
+        if data & 0b00000000_00000000_00000000_10000000 == 0 || self.val > 0b1111111_1111111_1111111
+        {
             self.closed = true;
             info!("VLQBuilder closed.")
         }

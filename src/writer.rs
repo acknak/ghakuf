@@ -75,7 +75,12 @@ impl<'a> Writer<'a> {
     /// let writer: Writer = Writer::new();
     /// ```
     pub fn new() -> Writer<'a> {
-        Writer { messages: Vec::new(), format: Format::F1, time_base: 480, running_status: false }
+        Writer {
+            messages: Vec::new(),
+            format: Format::F1,
+            time_base: 480,
+            running_status: false,
+        }
     }
     /// Returns keeping messages by borrowing.
     ///
@@ -233,7 +238,13 @@ impl<'a> Writer<'a> {
     /// ```
     pub fn write(&self, path: &path::Path) -> Result<(), io::Error> {
         info!("start writing at {:?}", path);
-        let mut file = io::BufWriter::new(fs::OpenOptions::new().write(true).truncate(true).create(true).open(path)?);
+        let mut file = io::BufWriter::new(
+            fs::OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .create(true)
+                .open(path)?,
+        );
         file.write(Tag::Header.binary())?;
         file.write(&[0, 0, 0, 6])?;
         file.write(&self.format.binary())?;
@@ -253,7 +264,11 @@ impl<'a> Writer<'a> {
                     pre_status_byte = None;
                     info!("wrote track change");
                 }
-                Message::MidiEvent { delta_time, ref event, .. } => {
+                Message::MidiEvent {
+                    delta_time,
+                    ref event,
+                    ..
+                } => {
                     let delta_time = VLQ::new(delta_time);
                     let tmp_status_byte = (*event).status_byte();
                     match pre_status_byte {
@@ -312,7 +327,11 @@ impl<'a> Writer<'a> {
         tracks_len
     }
     fn track_number(&self) -> u16 {
-        let mut number = if self.messages.len() > 0 && *self.messages[0] != Message::TrackChange { 1 } else { 0 };
+        let mut number = if self.messages.len() > 0 && *self.messages[0] != Message::TrackChange {
+            1
+        } else {
+            0
+        };
         for message in &self.messages {
             number += match **message {
                 Message::TrackChange => 1,
