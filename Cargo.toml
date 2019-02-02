@@ -6,15 +6,15 @@ keywords = ["SMF", "MIDI", "parser", "builder"]
 name = "ghakuf"
 readme = "README.md"
 repository = "https://github.com/acknak/ghakuf"
-version = "0.5.1"
+version = "0.5.2"
 
 [badges]
 travis-ci = { repository = "acknak/ghakuf" }
 appveyor = { repository = "acknak/ghakuf" }
 
 [dependencies]
-byteorder = "1.1"
-log = "0.3"
+byteorder = "1"
+log = "0.4"
 
 [lib]
 name = "ghakuf"
