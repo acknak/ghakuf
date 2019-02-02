@@ -4,7 +4,6 @@ ghakuf
 A Rust library for parsing/building SMF (Standard MIDI File).
 
 [![Build Status](https://travis-ci.org/acknak/ghakuf.svg?branch=master)](https://travis-ci.org/acknak/ghakuf)
-[![Build status](https://ci.appveyor.com/api/projects/status/r364l2347q7wf4l0?svg=true)](https://ci.appveyor.com/project/acknak/ghakuf)
 [![Crates.io](https://img.shields.io/crates/v/ghakuf.svg)](https://crates.io/crates/ghakuf)
 
 ## Examples
