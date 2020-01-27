@@ -237,7 +237,7 @@ impl<'a> Writer<'a> {
     /// writer.write(&path);
     /// ```
     pub fn write(&self, path: &path::Path) -> Result<(), io::Error> {
-        info!("start writing at {:?}", path);
+        debug!("start writing at {:?}", path);
         let mut file = io::BufWriter::new(
             fs::OpenOptions::new()
                 .write(true)
@@ -262,7 +262,7 @@ impl<'a> Writer<'a> {
                     file.write(&Message::TrackChange.binary())?;
                     file.write_u32::<BigEndian>(track_len_filo.pop().unwrap() as u32)?;
                     pre_status_byte = None;
-                    info!("wrote track change");
+                    debug!("wrote track change");
                 }
                 Message::MidiEvent {
                     delta_time,
@@ -276,11 +276,11 @@ impl<'a> Writer<'a> {
                             let tmp_message = message.binary();
                             file.write(&tmp_message[0..delta_time.len()])?;
                             file.write(&message.binary()[delta_time.len() + 1..])?;
-                            info!("wrote some message with running status");
+                            debug!("wrote some message with running status");
                         }
                         _ => {
                             file.write(&message.binary())?;
-                            info!("wrote some message");
+                            debug!("wrote some message");
                             if self.running_status {
                                 pre_status_byte = Some(tmp_status_byte);
                             }
@@ -289,7 +289,7 @@ impl<'a> Writer<'a> {
                 }
                 _ => {
                     file.write(&message.binary())?;
-                    info!("wrote some message");
+                    debug!("wrote some message");
                 }
             }
         }
