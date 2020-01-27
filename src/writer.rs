@@ -276,7 +276,7 @@ impl<'a> Writer<'a> {
                             let tmp_message = message.binary();
                             file.write(&tmp_message[0..delta_time.len()])?;
                             file.write(&message.binary()[delta_time.len() + 1..])?;
-                            debug!("wrote some message with running status");
+                            trace!("wrote some message with running status");
                         }
                         _ => {
                             file.write(&message.binary())?;
