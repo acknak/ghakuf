@@ -37,7 +37,7 @@ use std::{error, fmt, fs, io, mem, path};
 /// ```
 pub struct Reader<'a> {
     file: io::BufReader<fs::File>,
-    handlers: Vec<&'a mut Handler>,
+    handlers: Vec<&'a mut dyn Handler>,
     path: &'a path::Path,
 }
 impl<'a> Reader<'a> {
@@ -57,10 +57,10 @@ impl<'a> Reader<'a> {
     /// impl Handler for FugaHandler {}
     /// ```
     pub fn new(
-        handler: &'a mut Handler,
+        handler: &'a mut dyn Handler,
         path: &'a path::Path,
     ) -> Result<Reader<'a>, ReadError<'a>> {
-        let mut handlers: Vec<&'a mut Handler> = Vec::new();
+        let mut handlers: Vec<&'a mut dyn Handler> = Vec::new();
         handlers.push(handler);
         Ok(Reader {
             file: io::BufReader::new(fs::OpenOptions::new().read(true).open(path)?),
@@ -88,7 +88,7 @@ impl<'a> Reader<'a> {
     /// struct NyanHandler {}
     /// impl Handler for NyanHandler {}
     /// ```
-    pub fn push_handler(&mut self, handler: &'a mut Handler) {
+    pub fn push_handler(&mut self, handler: &'a mut dyn Handler) {
         self.handlers.push(handler);
     }
     /// Parses SMF messages and fires(broadcasts) handlers.
@@ -243,7 +243,7 @@ impl<'a> Reader<'a> {
                         }
                     }
                 }
-                0x80...0xef => {
+                0x80..=0xef => {
                     // midi event
                     info!("midi event status has found!");
                     let mut builder = MidiEventBuilder::new(status);
