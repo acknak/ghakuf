@@ -280,7 +280,7 @@ impl<'a> Writer<'a> {
                         }
                         _ => {
                             file.write(&message.binary())?;
-                            debug!("wrote some message");
+                            trace!("wrote some message");
                             if self.running_status {
                                 pre_status_byte = Some(tmp_status_byte);
                             }
@@ -289,7 +289,7 @@ impl<'a> Writer<'a> {
                 }
                 _ => {
                     file.write(&message.binary())?;
-                    debug!("wrote some message");
+                    trace!("wrote some message");
                 }
             }
         }
