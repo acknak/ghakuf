@@ -219,7 +219,7 @@ impl<'a> Reader<'a> {
             data_size -= delta_time.len() as u32;
             let mut status = self.file.read_u8()?;
             if status < 0b10000000 {
-                info!(
+                debug!(
                     "running status has found! recorded data: {}, corrected data: {}",
                     status, pre_status
                 );
@@ -231,7 +231,7 @@ impl<'a> Reader<'a> {
             match status {
                 0xff => {
                     // meta event
-                    info!("meta event status has found!");
+                    debug!("meta event status has found!");
                     let meta_event = MetaEvent::new(self.file.read_u8()?);
                     data_size -= mem::size_of::<u8>() as u32;
                     let len = self.read_vlq()?;
@@ -245,7 +245,7 @@ impl<'a> Reader<'a> {
                 }
                 0x80..=0xef => {
                     // midi event
-                    info!("midi event status has found!");
+                    debug!("midi event status has found!");
                     let mut builder = MidiEventBuilder::new(status);
                     while builder.shortage() > 0 {
                         builder.push(self.file.read_u8()?);
@@ -261,7 +261,7 @@ impl<'a> Reader<'a> {
                 }
                 0xf0 | 0xf7 => {
                     // system exclusive event
-                    info!("system exclusice event status has found!");
+                    debug!("system exclusice event status has found!");
                     if status == 0xf7 && pre_status == 0xf0 {
                         pre_status = 0;
                         data_size -= mem::size_of::<u8>() as u32;
