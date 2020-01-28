@@ -407,7 +407,7 @@ impl MidiEventBuilder {
             status: status,
             data: Vec::new(),
             shortage: match status & 0xf0 {
-                0x80...0xb0 | 0xe0 => 2,
+                0x80..=0xb0 | 0xe0 => 2,
                 0xc0 | 0xd0 => 1,
                 _ => 0,
             },
