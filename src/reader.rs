@@ -35,12 +35,13 @@ use std::{error, fmt, fs, io, mem, path};
 ///     fn track_change(&mut self) {}
 /// }
 /// ```
-pub struct Reader<'a> {
-    file: io::BufReader<fs::File>,
+pub struct Reader<'a, R = fs::File> {
+    file: io::BufReader<R>,
     handlers: Vec<&'a mut dyn Handler>,
     path: &'a path::Path,
 }
-impl<'a> Reader<'a> {
+
+impl<'a> Reader<'a, fs::File> {
     /// Builds Reader with handler(observer) and SMF file path.
     ///
     /// # Examples
@@ -59,15 +60,43 @@ impl<'a> Reader<'a> {
     pub fn new(
         handler: &'a mut dyn Handler,
         path: &'a path::Path,
-    ) -> Result<Reader<'a>, ReadError<'a>> {
+    ) -> Result<Reader<'a, fs::File>, ReadError<'a>> {
+        Self::from_reader(handler, fs::OpenOptions::new().read(true).open(path)?)
+    }
+}
+
+impl<'a, R> Reader<'a, R> where R: Read + Seek {
+    /// Builds Reader with handler(observer) and a `Read` object.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ghakuf::reader::*;
+    /// use std::path;
+    /// use std::io::Cursor;
+    ///
+    /// let midi_file = include_bytes!("../tests/test.mid");
+    /// let midi_file = Cursor::new(&midi_file[..]);
+    /// 
+    /// let mut handler = FugaHandler {};
+    /// let mut reader = Reader::from_reader(&mut handler, midi_file);
+    ///
+    /// struct FugaHandler {}
+    /// impl Handler for FugaHandler {}
+    /// ```
+    pub fn from_reader(
+        handler: &'a mut dyn Handler,
+        reader: R,
+    ) -> Result<Reader<'a, R>, ReadError<'a>> {
         let mut handlers: Vec<&'a mut dyn Handler> = Vec::new();
         handlers.push(handler);
         Ok(Reader {
-            file: io::BufReader::new(fs::OpenOptions::new().read(true).open(path)?),
-            path: path,
+            file: io::BufReader::new(reader),
+            path: path::Path::new(""),
             handlers: handlers,
         })
     }
+
     /// Pushes Handler to Reader.
     ///
     /// # Examples
@@ -184,7 +213,7 @@ impl<'a> Reader<'a> {
             }
         }
     }
-    fn read_header_block(&mut self) -> Result<&mut Reader<'a>, ReadError<'a>> {
+    fn read_header_block(&mut self) -> Result<&mut Self, ReadError<'a>> {
         let file_code = self.file.read_u32::<BigEndian>()?;
         if file_code == 6u32 {
             let format = self.file.read_u16::<BigEndian>()?;
@@ -202,7 +231,7 @@ impl<'a> Reader<'a> {
             })
         }
     }
-    fn read_track_block(&mut self) -> Result<&mut Reader<'a>, ReadError<'a>> {
+    fn read_track_block(&mut self) -> Result<&mut Self, ReadError<'a>> {
         let mut data_size = self.file.read_u32::<BigEndian>()?;
         let mut pre_status: u8 = 0;
         while data_size > 0 {
