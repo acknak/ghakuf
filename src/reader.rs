@@ -2,7 +2,7 @@ use byteorder::{BigEndian, ReadBytesExt};
 use formats::*;
 use messages::*;
 use std::io::{Read, Seek, SeekFrom};
-use std::{error, fmt, fs, io, mem, path};
+use std::{fmt, fs, io, mem, path};
 
 /// `ghakuf`'s SMF parser.
 ///
@@ -458,19 +458,6 @@ impl<'a> fmt::Display for ReadError<'a> {
                 status,
                 fs::canonicalize(&path).unwrap().display()
             ),
-        }
-    }
-}
-impl<'a> error::Error for ReadError<'a> {
-    fn description(&self) -> &str {
-        use reader::ReadError::*;
-        match *self {
-            InvalidHeaderTag { .. } => "Invalid header tag has found. This file dosen't follow SMF format.",
-            InvalidIdentifyCode { .. } => "Invalid SMF identify code has found at header. This file dosen't follow SMF format.",
-            InvalidTrackTag { .. } => "Invalid track tag has found. This file dosen't follow SMF format.",
-            ReadError::Io(ref err) => err.description(),
-            NoValidHandler => "Parser doesn't have any valid handlers. Regist vailid handler.",
-            UnknownMessageStatus { .. } => "Unknown message status has found. This file dosen't follow SMF format.",
         }
     }
 }
