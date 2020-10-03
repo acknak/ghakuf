@@ -2,7 +2,7 @@ use byteorder::{BigEndian, ReadBytesExt};
 use formats::*;
 use messages::*;
 use std::io::{Read, Seek, SeekFrom};
-use std::{fmt, fs, io, mem, path};
+use std::{error, fmt, fs, io, mem, path};
 
 /// `ghakuf`'s SMF parser.
 ///
@@ -461,6 +461,7 @@ impl<'a> fmt::Display for ReadError<'a> {
         }
     }
 }
+impl<'a> error::Error for ReadError<'a> {}
 impl<'a> From<io::Error> for ReadError<'a> {
     fn from(err: io::Error) -> ReadError<'a> {
         ReadError::Io(err)
